@@ -7,49 +7,98 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
+      :root {
+        --primary-glow: conic-gradient(from 180deg at 50% 50%, #16abff33 0deg, #0885ff33 55deg, #54d6ff33 120deg, #0071ff33 160deg, transparent 360deg);
+        --secondary-glow: radial-gradient(rgba(255, 255, 255, 1), rgba(255, 255, 255, 0));
+      }
+
       body {
         font-family: 'Plus Jakarta Sans', sans-serif;
-        background-color: #F0F4F8;
-        color: #1E293B;
+        background-color: #F8FAFC;
+        color: #0F172A;
         -webkit-tap-highlight-color: transparent;
+        overflow-x: hidden;
       }
-      /* Premium Gradients */
-      .bg-gradient-premium {
-        background: linear-gradient(135deg, #0F172A 0%, #1E293B 100%);
+
+      /* Animated Background Elements */
+      .bg-aurora {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        z-index: -1;
+        background: radial-gradient(circle at 0% 0%, #eef2ff 0%, transparent 50%), 
+                    radial-gradient(circle at 100% 100%, #f0fdf4 0%, transparent 50%),
+                    radial-gradient(circle at 100% 0%, #fdf4ff 0%, transparent 50%);
+        opacity: 0.8;
       }
-      .bg-gradient-security {
-        background: linear-gradient(135deg, #2563EB 0%, #1D4ED8 100%);
+
+      .blob {
+        position: absolute;
+        filter: blur(80px);
+        z-index: -1;
+        opacity: 0.4;
+        animation: float 10s infinite ease-in-out alternate;
       }
+      .blob-1 { top: -10%; left: -10%; width: 50vw; height: 50vw; background: #60A5FA; animation-delay: 0s; }
+      .blob-2 { bottom: -10%; right: -10%; width: 40vw; height: 40vw; background: #A78BFA; animation-delay: -5s; }
+      .blob-3 { bottom: 20%; left: 20%; width: 30vw; height: 30vw; background: #34D399; animation-delay: -2s; opacity: 0.2; }
+
+      @keyframes float {
+        0% { transform: translate(0, 0) scale(1); }
+        100% { transform: translate(20px, 40px) scale(1.1); }
+      }
+
+      /* Premium Glassmorphism */
       .glass-panel {
-        background: rgba(255, 255, 255, 0.7);
-        backdrop-filter: blur(12px);
-        -webkit-backdrop-filter: blur(12px);
-        border: 1px solid rgba(255, 255, 255, 0.5);
+        background: rgba(255, 255, 255, 0.65);
+        backdrop-filter: blur(20px) saturate(180%);
+        -webkit-backdrop-filter: blur(20px) saturate(180%);
+        border: 1px solid rgba(255, 255, 255, 0.8);
+        box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.07);
       }
+      
       .glass-panel-dark {
-        background: rgba(15, 23, 42, 0.6);
-        backdrop-filter: blur(16px);
-        -webkit-backdrop-filter: blur(16px);
+        background: rgba(15, 23, 42, 0.75);
+        backdrop-filter: blur(24px) saturate(180%);
+        -webkit-backdrop-filter: blur(24px) saturate(180%);
         border: 1px solid rgba(255, 255, 255, 0.1);
+        box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
       }
-      /* Custom Scrollbar */
-      ::-webkit-scrollbar {
-        width: 8px;
-        height: 8px;
+
+      /* Scanner Grid Effect */
+      .bg-grid-slate {
+        background-size: 40px 40px;
+        background-image: linear-gradient(to right, rgba(148, 163, 184, 0.1) 1px, transparent 1px),
+                          linear-gradient(to bottom, rgba(148, 163, 184, 0.1) 1px, transparent 1px);
       }
-      ::-webkit-scrollbar-track {
-        background: transparent;
+
+      /* Animations */
+      @keyframes scan-line {
+        0% { transform: translateY(-100%); opacity: 0; }
+        10% { opacity: 1; }
+        90% { opacity: 1; }
+        100% { transform: translateY(500%); opacity: 0; }
       }
-      ::-webkit-scrollbar-thumb {
-        background: #CBD5E1;
-        border-radius: 4px;
+      
+      @keyframes radar-ping {
+        0% { transform: scale(1); opacity: 0.8; }
+        100% { transform: scale(2.5); opacity: 0; }
       }
-      ::-webkit-scrollbar-thumb:hover {
-        background: #94A3B8;
+
+      /* Utilities */
+      .no-scrollbar::-webkit-scrollbar { display: none; }
+      .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+      
+      .text-gradient {
+        background-clip: text;
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-image: linear-gradient(135deg, #2563EB, #7C3AED);
       }
-      .touch-target {
-        min-height: 56px;
-      }
+
+      .touch-target { min-height: 56px; }
     </style>
   <script type="importmap">
 {
@@ -66,6 +115,10 @@
 </script>
 </head>
   <body>
+    <div class="bg-aurora"></div>
+    <div class="blob blob-1"></div>
+    <div class="blob blob-2"></div>
+    <div class="blob blob-3"></div>
     <div id="root"></div>
   </body>
 </html>

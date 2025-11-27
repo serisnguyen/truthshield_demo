@@ -1,6 +1,6 @@
 
-import React from 'react';
-import { ShieldCheck, MessageSquareText, Activity, AlertTriangle, Phone, BellRing, ChevronRight, Truck, Lock, Search, Users, Database, Globe } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { ShieldCheck, MessageSquareText, Activity, AlertTriangle, Phone, BellRing, ChevronRight, Truck, Lock, Search, Users, Database, Globe, Scan, Sparkles, Wifi } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { Tab } from '../App';
 
@@ -10,6 +10,15 @@ interface HomeScreenProps {
 
 const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigate }) => {
   const { user, setIncomingCall, isSeniorMode } = useAuth();
+  const [scanning, setScanning] = useState(true);
+
+  // Fake scanning effect
+  useEffect(() => {
+      const interval = setInterval(() => {
+          setScanning(prev => !prev);
+      }, 4000);
+      return () => clearInterval(interval);
+  }, []);
   
   // 1. Shipper Call (Safe Context)
   const triggerShipperCall = () => {
@@ -36,146 +45,194 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigate }) => {
   };
 
   return (
-    <div className={`p-4 md:p-8 pt-20 md:pt-10 pb-20 max-w-5xl mx-auto animate-in fade-in duration-500 ${isSeniorMode ? 'space-y-8' : 'space-y-6'}`}>
+    <div className={`p-4 md:p-8 pt-24 md:pt-10 pb-32 max-w-6xl mx-auto animate-in fade-in duration-500 ${isSeniorMode ? 'space-y-8' : 'space-y-8'}`}>
        
-       <div className="mb-4">
-          <h1 className={`${isSeniorMode ? 'text-4xl' : 'text-3xl'} font-black text-slate-900 mb-2`}>Xin chào, {user?.name} 👋</h1>
-          <p className={`${isSeniorMode ? 'text-xl' : 'text-lg'} text-slate-500`}>
-              {isSeniorMode ? 'Hệ thống đang bảo vệ bác.' : 'Hệ thống an ninh đang hoạt động.'}
-          </p>
+       {/* Greeting Section */}
+       <div className="flex justify-between items-end mb-2">
+           <div>
+               <h1 className={`${isSeniorMode ? 'text-4xl' : 'text-3xl'} font-black text-slate-900 mb-1`}>
+                   Xin chào, <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600">{user?.name}</span> 👋
+               </h1>
+               <p className={`${isSeniorMode ? 'text-xl' : 'text-base'} text-slate-500 font-medium flex items-center gap-2`}>
+                   <ShieldCheck size={16} className="text-green-500" /> Hệ thống đang hoạt động tối ưu.
+               </p>
+           </div>
+           {!isSeniorMode && (
+               <div className="hidden md:flex items-center gap-2 bg-white px-3 py-1.5 rounded-full border border-slate-200 shadow-sm">
+                   <Wifi size={14} className="text-green-500" />
+                   <span className="text-xs font-bold text-slate-600">Đã kết nối AI Core</span>
+               </div>
+           )}
        </div>
 
-       {/* Quick Lookup Bar (iCallMe Style) */}
+       {/* HERO SECTION: RADAR STATUS */}
+       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+           {/* MAIN PROTECTION CARD - RADAR STYLE */}
+           <div className={`lg:col-span-2 bg-gradient-to-br from-[#0F172A] to-[#1E293B] rounded-[32px] text-white shadow-2xl shadow-slate-300 overflow-hidden relative group min-h-[280px] flex items-center ${isSeniorMode ? 'p-8' : 'p-8'}`}>
+               
+               {/* Background Grid & Radar Effect */}
+               <div className="absolute inset-0 bg-grid-slate opacity-10"></div>
+               <div className="absolute right-[-10%] top-[-10%] w-[400px] h-[400px] bg-blue-500/20 rounded-full blur-[80px] animate-pulse"></div>
+               
+               <div className="relative z-10 flex flex-col md:flex-row items-center w-full gap-8">
+                   {/* Radar Visualization */}
+                   <div className="relative w-40 h-40 flex-shrink-0">
+                       <div className="absolute inset-0 border-4 border-blue-500/30 rounded-full"></div>
+                       <div className="absolute inset-4 border-2 border-blue-400/20 rounded-full"></div>
+                       <div className="absolute inset-0 rounded-full bg-gradient-to-tr from-blue-500/20 to-transparent animate-[spin_4s_linear_infinite]"></div>
+                       <div className="absolute inset-0 flex items-center justify-center">
+                           <ShieldCheck size={isSeniorMode ? 64 : 48} className="text-blue-400 drop-shadow-[0_0_15px_rgba(96,165,250,0.8)]" />
+                       </div>
+                       {/* Scanning blips */}
+                       <div className="absolute top-8 left-10 w-2 h-2 bg-green-400 rounded-full animate-ping"></div>
+                       <div className="absolute bottom-6 right-8 w-1.5 h-1.5 bg-blue-300 rounded-full animate-ping delay-700"></div>
+                   </div>
+
+                   <div className="flex-1 text-center md:text-left">
+                       <div className="inline-flex items-center gap-2 bg-blue-500/20 border border-blue-400/30 rounded-full px-3 py-1 mb-4 backdrop-blur-md">
+                           <Activity size={14} className="text-blue-300 animate-pulse" />
+                           <span className="text-xs font-bold text-blue-100 tracking-wider uppercase">Real-time Protection</span>
+                       </div>
+                       <h2 className={`${isSeniorMode ? 'text-4xl' : 'text-4xl'} font-black mb-2 leading-tight`}>
+                           Bạn đang được <br/><span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-cyan-300">Bảo vệ An toàn</span>
+                       </h2>
+                       <p className="text-slate-400 text-sm md:text-base max-w-md mx-auto md:mx-0">
+                           AI đang giám sát cuộc gọi, tin nhắn và môi trường mạng để ngăn chặn lừa đảo.
+                       </p>
+                   </div>
+               </div>
+
+               {/* Bottom Info Bar */}
+               <div className="absolute bottom-0 left-0 right-0 bg-white/5 backdrop-blur-md border-t border-white/10 p-4 flex justify-around">
+                   <div className="text-center">
+                       <span className="block text-xl font-bold text-white">24/7</span>
+                       <span className="text-[10px] text-slate-400 uppercase tracking-wider">Giám sát</span>
+                   </div>
+                   <div className="w-px bg-white/10"></div>
+                   <div className="text-center">
+                       <span className="block text-xl font-bold text-green-400">0</span>
+                       <span className="text-[10px] text-slate-400 uppercase tracking-wider">Mối đe dọa</span>
+                   </div>
+                   <div className="w-px bg-white/10"></div>
+                   <div className="text-center">
+                       <span className="block text-xl font-bold text-blue-400">100%</span>
+                       <span className="text-[10px] text-slate-400 uppercase tracking-wider">Pin</span>
+                   </div>
+               </div>
+           </div>
+
+           {/* STATS CARD (Right Column) */}
+           <div className="grid grid-rows-2 gap-6">
+               {/* Community Stat */}
+               <div onClick={() => onNavigate('community')} className="glass-panel p-6 rounded-[32px] cursor-pointer hover:border-blue-300 transition-all group relative overflow-hidden">
+                   <div className="absolute right-[-20px] top-[-20px] bg-indigo-50 w-24 h-24 rounded-full blur-xl group-hover:bg-indigo-100 transition-colors"></div>
+                   <div className="relative z-10">
+                       <div className="flex justify-between items-start mb-4">
+                           <div className="bg-indigo-100 p-2.5 rounded-xl text-indigo-600">
+                               <Globe size={24} />
+                           </div>
+                           <ArrowUpRight size={20} className="text-slate-300 group-hover:text-indigo-600 transition-colors" />
+                       </div>
+                       <h3 className="text-3xl font-black text-slate-900">56 Tỷ</h3>
+                       <p className="text-xs font-bold text-slate-500 uppercase tracking-wide mt-1">Spam đã chặn</p>
+                   </div>
+               </div>
+
+               {/* Scan Stat */}
+               <div onClick={() => onNavigate('scanner')} className="glass-panel p-6 rounded-[32px] cursor-pointer hover:border-purple-300 transition-all group relative overflow-hidden">
+                   <div className="absolute right-[-20px] top-[-20px] bg-purple-50 w-24 h-24 rounded-full blur-xl group-hover:bg-purple-100 transition-colors"></div>
+                   <div className="relative z-10">
+                       <div className="flex justify-between items-start mb-4">
+                            <div className="bg-purple-100 p-2.5 rounded-xl text-purple-600">
+                               <Scan size={24} />
+                           </div>
+                           <ArrowUpRight size={20} className="text-slate-300 group-hover:text-purple-600 transition-colors" />
+                       </div>
+                       <h3 className="text-3xl font-black text-slate-900">Deepfake</h3>
+                       <p className="text-xs font-bold text-slate-500 uppercase tracking-wide mt-1">Quét Hình/Tiếng</p>
+                   </div>
+               </div>
+           </div>
+       </div>
+
+       {/* QUICK ACTIONS BAR (Glassmorphism) */}
        <div 
          onClick={() => onNavigate('lookup')}
-         className={`bg-white border rounded-3xl shadow-sm flex items-center cursor-pointer hover:shadow-md transition-all group ${isSeniorMode ? 'p-6 border-slate-300' : 'p-4 border-slate-200'}`}
+         className={`glass-panel rounded-[28px] flex items-center cursor-pointer hover:shadow-lg hover:scale-[1.01] transition-all group relative overflow-hidden ${isSeniorMode ? 'p-6' : 'p-4'}`}
        >
-            <div className={`rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center group-hover:bg-blue-600 group-hover:text-white transition-colors ${isSeniorMode ? 'w-16 h-16 mr-6' : 'w-12 h-12 mr-4'}`}>
+            <div className={`rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 text-white flex items-center justify-center shadow-lg shadow-blue-200 transition-colors ${isSeniorMode ? 'w-20 h-20 mr-6' : 'w-14 h-14 mr-5'}`}>
                 <Search size={isSeniorMode ? 32 : 24} />
             </div>
-            <div className="flex-1">
-                <h3 className={`font-bold text-slate-900 ${isSeniorMode ? 'text-2xl' : 'text-lg'}`}>Tra cứu số lạ</h3>
-                <p className={`text-slate-500 ${isSeniorMode ? 'text-lg' : 'text-sm'}`}>Nhập số điện thoại để kiểm tra...</p>
+            <div className="flex-1 z-10">
+                <h3 className={`font-bold text-slate-900 mb-1 ${isSeniorMode ? 'text-2xl' : 'text-lg'}`}>Tra cứu số lạ (Truecaller)</h3>
+                <p className={`text-slate-500 ${isSeniorMode ? 'text-lg' : 'text-sm'}`}>Nhập số điện thoại để kiểm tra uy tín...</p>
             </div>
-            <div className="bg-slate-100 rounded-full p-2 text-slate-400">
-                <ChevronRight size={isSeniorMode ? 32 : 24} />
+            <div className="bg-slate-100 rounded-full p-2 text-slate-400 group-hover:bg-blue-600 group-hover:text-white transition-all">
+                <ChevronRight size={isSeniorMode ? 32 : 20} />
             </div>
        </div>
 
-       {/* Status Cards - Premium Design */}
-       <div className={`grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 ${isSeniorMode ? 'mb-10' : 'mb-8'}`}>
-           
-           {/* Main Status */}
-           <div className={`bg-gradient-premium rounded-[32px] text-white shadow-xl shadow-slate-200 relative overflow-hidden group ${isSeniorMode ? 'p-8' : 'p-6'}`}>
-               <div className="absolute top-0 right-0 w-48 h-48 bg-blue-500 rounded-full blur-[60px] opacity-20 -translate-y-1/2 translate-x-1/4 group-hover:opacity-30 transition-opacity"></div>
-               <div className="relative z-10 h-full flex flex-col justify-between">
-                   <div className="flex items-center justify-between mb-6">
-                       <div className="bg-white/10 p-2.5 rounded-2xl backdrop-blur-md">
-                           <ShieldCheck size={isSeniorMode ? 32 : 24} className="text-green-400" />
-                       </div>
-                       <span className="text-xs font-bold uppercase tracking-wider bg-green-500/20 text-green-300 px-3 py-1 rounded-full border border-green-500/20">
-                           Protected
-                       </span>
-                   </div>
-                   <div>
-                       <h3 className={`${isSeniorMode ? 'text-4xl' : 'text-3xl'} font-black mb-1`}>An Toàn</h3>
-                       <p className="text-slate-400 text-sm">Giám sát 24/7 đang bật.</p>
-                   </div>
-               </div>
+       {/* DEMO SECTION */}
+       <div>
+           <h2 className={`${isSeniorMode ? 'text-2xl' : 'text-lg'} font-bold text-slate-900 mb-4 px-1 flex items-center gap-2`}>
+               <Lock size={isSeniorMode ? 24 : 18} className="text-slate-400"/> Giả lập tình huống (Demo)
+           </h2>
+           <div className={`grid grid-cols-2 gap-4`}>
+                <button 
+                    onClick={triggerShipperCall}
+                    className="glass-panel hover:bg-green-50/50 p-6 rounded-3xl text-left transition-all relative overflow-hidden group active:scale-95 border-b-4 border-transparent hover:border-green-400"
+                >
+                    <div className="flex items-center gap-3 mb-4">
+                        <div className="p-3 bg-green-100 rounded-2xl text-green-600 shadow-sm"><Truck size={isSeniorMode ? 28 : 24} /></div>
+                    </div>
+                    <span className={`block font-black text-slate-800 mb-1 ${isSeniorMode ? 'text-2xl' : 'text-lg'}`}>Shipper Gọi</span>
+                    <span className={`text-slate-500 font-medium ${isSeniorMode ? 'text-base' : 'text-xs'}`}>Mô phỏng an toàn</span>
+                </button>
+
+                <button 
+                    onClick={triggerScamCall}
+                    className="glass-panel hover:bg-red-50/50 p-6 rounded-3xl text-left transition-all relative overflow-hidden group active:scale-95 border-b-4 border-transparent hover:border-red-400"
+                >
+                    <div className="flex items-center gap-3 mb-4">
+                        <div className="p-3 bg-red-100 rounded-2xl text-red-600 shadow-sm"><AlertTriangle size={isSeniorMode ? 28 : 24} /></div>
+                    </div>
+                    <span className={`block font-black text-slate-800 mb-1 ${isSeniorMode ? 'text-2xl' : 'text-lg'}`}>Lừa Đảo Gọi</span>
+                    <span className={`text-slate-500 font-medium ${isSeniorMode ? 'text-base' : 'text-xs'}`}>Mô phỏng nguy hiểm</span>
+                </button>
            </div>
-
-           {/* Global Stats (Truecaller Style) */}
-           <div onClick={() => onNavigate('community')} className={`bg-indigo-600 rounded-[32px] text-white shadow-xl shadow-indigo-200 relative overflow-hidden cursor-pointer group ${isSeniorMode ? 'p-8' : 'p-6'}`}>
-               <div className="absolute bottom-0 left-0 w-32 h-32 bg-white rounded-full blur-[50px] opacity-20 translate-y-1/2 -translate-x-1/4"></div>
-               <div className="relative z-10 h-full flex flex-col justify-between">
-                   <div className="flex items-center justify-between mb-6">
-                       <div className="bg-white/20 p-2.5 rounded-2xl backdrop-blur-md">
-                           <Globe size={isSeniorMode ? 32 : 24} className="text-white" />
-                       </div>
-                       <div className="flex items-center gap-1 bg-white/10 px-2 py-0.5 rounded-lg text-xs font-bold">
-                           <span className="w-1.5 h-1.5 bg-green-400 rounded-full animate-pulse"></span>
-                           LIVE
-                       </div>
-                   </div>
-                   <div>
-                       <span className={`block font-black text-white mb-1 ${isSeniorMode ? 'text-5xl' : 'text-4xl'}`}>
-                           56 Tỷ
-                       </span>
-                       <span className="text-sm text-indigo-100 font-bold uppercase tracking-wide">Spam Đã Chặn</span>
-                       <p className="text-xs text-indigo-200 mt-1">Dữ liệu từ Global Community</p>
-                   </div>
-               </div>
-           </div>
-
-           {/* Messages Stats */}
-           <div onClick={() => onNavigate('messages')} className={`bg-white border border-slate-200 rounded-[32px] cursor-pointer hover:shadow-lg transition-all group relative overflow-hidden ${isSeniorMode ? 'p-8' : 'p-6'}`}>
-                <div className="absolute right-0 top-0 w-32 h-32 bg-purple-50 rounded-bl-[100px] -z-0 transition-transform group-hover:scale-110"></div>
-                <div className="relative z-10">
-                   <div className="flex justify-between items-start mb-6">
-                       <div className="p-3 bg-purple-50 text-purple-600 rounded-2xl group-hover:bg-purple-600 group-hover:text-white transition-colors">
-                           <MessageSquareText size={isSeniorMode ? 32 : 24} />
-                       </div>
-                   </div>
-                   <div>
-                       <span className={`block font-black text-slate-900 mb-1 ${isSeniorMode ? 'text-5xl' : 'text-4xl'}`}>OK</span>
-                       <span className="text-sm text-slate-500 font-bold uppercase tracking-wide">Tin nhắn sạch</span>
-                   </div>
-               </div>
-           </div>
-       </div>
-
-       {/* Actions Demo */}
-       <h2 className={`${isSeniorMode ? 'text-2xl' : 'text-lg'} font-bold text-slate-900 mb-4 px-1 flex items-center gap-2`}>
-           <Lock size={isSeniorMode ? 24 : 18} className="text-slate-400"/> Giả lập tình huống (Demo)
-       </h2>
-       <div className={`grid grid-cols-2 gap-4 ${isSeniorMode ? 'mb-12' : 'mb-8'}`}>
-            <button 
-                onClick={triggerShipperCall}
-                className="bg-white hover:bg-green-50 border border-slate-200 hover:border-green-200 p-5 rounded-3xl text-left transition-all relative overflow-hidden group shadow-sm hover:shadow-md active:scale-95"
-            >
-                <div className="flex items-center gap-3 mb-3">
-                    <div className="p-2 bg-green-100 rounded-full text-green-600"><Truck size={isSeniorMode ? 28 : 20} /></div>
-                    <span className="font-bold text-green-700 text-xs uppercase bg-green-50 px-2 py-1 rounded-lg">An toàn</span>
-                </div>
-                <span className={`block font-black text-slate-800 ${isSeniorMode ? 'text-2xl' : 'text-lg'}`}>Shipper Gọi</span>
-                <span className={`text-slate-500 ${isSeniorMode ? 'text-sm' : 'text-xs'}`}>Mô phỏng cuộc gọi bình thường.</span>
-            </button>
-
-            <button 
-                onClick={triggerScamCall}
-                className="bg-white hover:bg-red-50 border border-slate-200 hover:border-red-200 p-5 rounded-3xl text-left transition-all relative overflow-hidden group shadow-sm hover:shadow-md active:scale-95"
-            >
-                <div className="flex items-center gap-3 mb-3">
-                    <div className="p-2 bg-red-100 rounded-full text-red-600"><AlertTriangle size={isSeniorMode ? 28 : 20} /></div>
-                    <span className="font-bold text-red-700 text-xs uppercase bg-red-50 px-2 py-1 rounded-lg">Nguy hiểm</span>
-                </div>
-                <span className={`block font-black text-slate-800 ${isSeniorMode ? 'text-2xl' : 'text-lg'}`}>Lừa Đảo Gọi</span>
-                <span className={`text-slate-500 ${isSeniorMode ? 'text-sm' : 'text-xs'}`}>Mô phỏng kẻ giả danh công an.</span>
-            </button>
        </div>
 
        {/* News Widget */}
-       <div className="bg-slate-900 rounded-[32px] p-8 text-white relative overflow-hidden shadow-2xl">
+       <div className="bg-[#0F172A] rounded-[32px] p-8 text-white relative overflow-hidden shadow-2xl group cursor-pointer" onClick={() => onNavigate('library')}>
+           <div className="absolute top-0 right-0 w-[300px] h-[300px] bg-purple-600/30 rounded-full blur-[100px] translate-x-1/3 -translate-y-1/3"></div>
            <div className="relative z-10 flex flex-col md:flex-row items-start gap-6">
-               <div className="p-4 bg-white/10 rounded-2xl backdrop-blur-md border border-white/10">
-                   <BellRing size={32} className="text-yellow-400 animate-pulse" />
+               <div className="p-4 bg-white/10 rounded-2xl backdrop-blur-md border border-white/10 shadow-inner">
+                   <BellRing size={32} className="text-yellow-400 group-hover:animate-swing" />
                </div>
                <div className="flex-1">
-                   <h3 className={`${isSeniorMode ? 'text-2xl' : 'text-xl'} font-bold mb-2`}>Cảnh báo thủ đoạn mới</h3>
-                   <p className={`text-slate-300 mb-6 leading-relaxed ${isSeniorMode ? 'text-lg' : 'text-sm'}`}>
-                       Gần đây xuất hiện chiêu lừa đảo "nâng cấp SIM 5G" để chiếm đoạt tài khoản ngân hàng. Tuyệt đối không làm theo hướng dẫn qua điện thoại.
+                   <div className="flex items-center gap-2 mb-2">
+                       <span className="bg-red-500 text-white text-[10px] font-black uppercase px-2 py-0.5 rounded">Mới</span>
+                       <h3 className={`${isSeniorMode ? 'text-2xl' : 'text-lg'} font-bold`}>Cảnh báo thủ đoạn: SIM 5G</h3>
+                   </div>
+                   <p className={`text-slate-300 leading-relaxed mb-0 ${isSeniorMode ? 'text-lg' : 'text-sm'}`}>
+                       Chiêu lừa "nâng cấp SIM" để chiếm đoạt mã OTP ngân hàng đang bùng phát. Xem cách phòng tránh ngay.
                    </p>
-                   <button onClick={() => onNavigate('library')} className={`bg-white text-slate-900 rounded-xl font-bold hover:bg-slate-100 transition-colors shadow-lg active:scale-95 ${isSeniorMode ? 'px-8 py-4 text-lg' : 'px-6 py-3 text-sm'}`}>
-                       Xem chi tiết
-                   </button>
+               </div>
+               <div className="self-center bg-white/10 p-2 rounded-full hover:bg-white/20 transition-colors">
+                   <ChevronRight size={24} />
                </div>
            </div>
-           
-           {/* Decor */}
-           <div className="absolute top-0 right-0 w-64 h-64 bg-blue-600/30 rounded-full blur-[80px] -translate-y-1/2 translate-x-1/2"></div>
        </div>
     </div>
   );
 };
+
+// Helper for icon used in stats
+const ArrowUpRight = ({size, className}: any) => (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+        <line x1="7" y1="17" x2="17" y2="7"></line>
+        <polyline points="7 7 17 7 17 17"></polyline>
+    </svg>
+);
 
 export default HomeScreen;
