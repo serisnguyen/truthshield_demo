@@ -2,25 +2,29 @@
 <html lang="vi">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0, viewport-fit=cover" />
     <title>TruthShield AI - Bảo Vệ Gia Đình</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
       :root {
-        --primary-glow: conic-gradient(from 180deg at 50% 50%, #16abff33 0deg, #0885ff33 55deg, #54d6ff33 120deg, #0071ff33 160deg, transparent 360deg);
-        --secondary-glow: radial-gradient(rgba(255, 255, 255, 1), rgba(255, 255, 255, 0));
+        /* Tăng độ đục để chữ dễ đọc hơn */
+        --glass-border: rgba(255, 255, 255, 0.6);
+        --glass-bg: rgba(255, 255, 255, 0.85); 
+        --glass-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.15);
       }
 
       body {
         font-family: 'Plus Jakarta Sans', sans-serif;
-        background-color: #F8FAFC;
+        background-color: #F0F4F8; /* Nền sáng hơn một chút để tăng tương phản */
         color: #0F172A;
         -webkit-tap-highlight-color: transparent;
         overflow-x: hidden;
+        /* Fix lỗi dính đáy trên iPhone dòng X trở lên */
+        padding-bottom: env(safe-area-inset-bottom);
       }
 
-      /* Animated Background Elements */
+      /* --- Aurora Background (Tinh chỉnh lại cho đỡ rối mắt) --- */
       .bg-aurora {
         position: fixed;
         top: 0;
@@ -28,77 +32,120 @@
         width: 100vw;
         height: 100vh;
         z-index: -1;
-        background: radial-gradient(circle at 0% 0%, #eef2ff 0%, transparent 50%), 
-                    radial-gradient(circle at 100% 100%, #f0fdf4 0%, transparent 50%),
-                    radial-gradient(circle at 100% 0%, #fdf4ff 0%, transparent 50%);
-        opacity: 0.8;
+        background: #F8FAFC;
+        overflow: hidden;
       }
 
       .blob {
         position: absolute;
+        border-radius: 50%;
         filter: blur(80px);
-        z-index: -1;
-        opacity: 0.4;
+        opacity: 0.5; /* Giảm opacity để nền không tranh chấp với chữ */
         animation: float 10s infinite ease-in-out alternate;
+        z-index: -1;
       }
-      .blob-1 { top: -10%; left: -10%; width: 50vw; height: 50vw; background: #60A5FA; animation-delay: 0s; }
-      .blob-2 { bottom: -10%; right: -10%; width: 40vw; height: 40vw; background: #A78BFA; animation-delay: -5s; }
-      .blob-3 { bottom: 20%; left: 20%; width: 30vw; height: 30vw; background: #34D399; animation-delay: -2s; opacity: 0.2; }
+      .blob-1 { top: -10%; left: -10%; width: 60vw; height: 60vw; background: #E0E7FF; animation-delay: 0s; }
+      .blob-2 { bottom: -10%; right: -10%; width: 50vw; height: 50vw; background: #DBEAFE; animation-delay: -5s; }
+      .blob-3 { top: 40%; left: 40%; width: 40vw; height: 40vw; background: #F3E8FF; animation-delay: -2s; opacity: 0.3; }
 
       @keyframes float {
         0% { transform: translate(0, 0) scale(1); }
-        100% { transform: translate(20px, 40px) scale(1.1); }
+        100% { transform: translate(20px, 40px) scale(1.05); }
+      }
+      
+      @keyframes wave {
+        0% { transform: rotate(0deg); }
+        10% { transform: rotate(14deg); }
+        20% { transform: rotate(-8deg); }
+        30% { transform: rotate(14deg); }
+        40% { transform: rotate(-4deg); }
+        50% { transform: rotate(10deg); }
+        60% { transform: rotate(0deg); }
+        100% { transform: rotate(0deg); }
+      }
+      
+      .animate-wave {
+        animation: wave 2s infinite;
+        transform-origin: 70% 70%;
       }
 
-      /* Premium Glassmorphism */
+      /* --- Premium Glassmorphism (High Contrast) --- */
       .glass-panel {
-        background: rgba(255, 255, 255, 0.65);
+        background: var(--glass-bg);
         backdrop-filter: blur(20px) saturate(180%);
         -webkit-backdrop-filter: blur(20px) saturate(180%);
-        border: 1px solid rgba(255, 255, 255, 0.8);
-        box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.07);
+        border: 1px solid var(--glass-border);
+        box-shadow: var(--glass-shadow);
       }
       
       .glass-panel-dark {
-        background: rgba(15, 23, 42, 0.75);
+        background: rgba(15, 23, 42, 0.95); /* Tối hơn để chữ trắng nổi bật */
         backdrop-filter: blur(24px) saturate(180%);
         -webkit-backdrop-filter: blur(24px) saturate(180%);
         border: 1px solid rgba(255, 255, 255, 0.1);
-        box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
-      }
-
-      /* Scanner Grid Effect */
-      .bg-grid-slate {
-        background-size: 40px 40px;
-        background-image: linear-gradient(to right, rgba(148, 163, 184, 0.1) 1px, transparent 1px),
-                          linear-gradient(to bottom, rgba(148, 163, 184, 0.1) 1px, transparent 1px);
-      }
-
-      /* Animations */
-      @keyframes scan-line {
-        0% { transform: translateY(-100%); opacity: 0; }
-        10% { opacity: 1; }
-        90% { opacity: 1; }
-        100% { transform: translateY(500%); opacity: 0; }
+        box-shadow: 0 10px 40px -10px rgba(0, 0, 0, 0.5);
       }
       
-      @keyframes radar-ping {
-        0% { transform: scale(1); opacity: 0.8; }
-        100% { transform: scale(2.5); opacity: 0; }
+      .bg-gradient-premium {
+          background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 50%, #06b6d4 100%);
+      }
+      
+      .text-gradient {
+          background-clip: text;
+          -webkit-background-clip: text;
+          -webkit-text-fill-color: transparent;
+          background-image: linear-gradient(to right, #60a5fa, #34d399);
       }
 
-      /* Utilities */
+      /* --- Effects --- */
+      @keyframes scan-line {
+        0% { top: 0%; opacity: 0; }
+        10% { opacity: 1; }
+        90% { opacity: 1; }
+        100% { top: 100%; opacity: 0; }
+      }
+      
+      .animate-scan-line {
+        animation: scan-line 2.5s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+      }
+      
+      @keyframes gradient-x {
+          0%, 100% {
+              background-size: 200% 200%;
+              background-position: left center;
+          }
+          50% {
+              background-size: 200% 200%;
+              background-position: right center;
+          }
+      }
+      
+      .animate-gradient {
+          animation: gradient-x 3s ease infinite;
+      }
+
+      @keyframes radar-spin {
+        from { transform: rotate(0deg); }
+        to { transform: rotate(360deg); }
+      }
+      
+      .radar-sweep {
+        background: conic-gradient(from 0deg, transparent 0deg, rgba(96, 165, 250, 0.1) 200deg, rgba(96, 165, 250, 0.8) 360deg);
+        animation: radar-spin 3s linear infinite;
+      }
+
       .no-scrollbar::-webkit-scrollbar { display: none; }
       .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
       
-      .text-gradient {
-        background-clip: text;
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        background-image: linear-gradient(135deg, #2563EB, #7C3AED);
-      }
-
       .touch-target { min-height: 56px; }
+      
+      /* Bento Grid Helper */
+      .bento-card {
+        transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.2s ease;
+      }
+      .bento-card:active {
+        transform: scale(0.98);
+      }
     </style>
   <script type="importmap">
 {
@@ -115,10 +162,11 @@
 </script>
 </head>
   <body>
-    <div class="bg-aurora"></div>
-    <div class="blob blob-1"></div>
-    <div class="blob blob-2"></div>
-    <div class="blob blob-3"></div>
+    <div class="bg-aurora">
+      <div class="blob blob-1"></div>
+      <div class="blob blob-2"></div>
+      <div class="blob blob-3"></div>
+    </div>
     <div id="root"></div>
   </body>
 </html>

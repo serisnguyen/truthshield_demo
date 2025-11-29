@@ -1,10 +1,9 @@
 
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef } from 'react';
 import { 
-  ScanFace, Upload, FileImage, FileAudio, X, AlertTriangle, 
-  CheckCircle2, Loader2, Play, Pause, Scan, Fingerprint, ShieldAlert,
-  Search, Eye, Activity, HeartPulse, Sparkles, BarChart3, Database,
-  Cpu, Layers, Radio, Zap
+  ScanFace, Upload, FileImage, X, 
+  Loader2, Play, Pause, Eye, Activity, HeartPulse, Sparkles, Database,
+  Cpu, Layers, Radio
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { analyzeMediaDeepfake } from '../services/aiService';
@@ -123,7 +122,7 @@ const DeepfakeScanner: React.FC = () => {
                   <div 
                       className={`border-2 border-dashed rounded-[32px] flex flex-col items-center justify-center text-center transition-all cursor-pointer bg-white group hover:border-blue-500 hover:bg-blue-50/30 relative overflow-hidden ${
                           isDragging ? 'border-blue-600 bg-blue-50' : 'border-slate-300'
-                      } ${isSeniorMode ? 'h-[500px]' : 'h-[500px]'}`}
+                      } h-[500px]`}
                   >
                       {/* Grid Background */}
                       <div className="absolute inset-0 bg-grid-slate opacity-30 pointer-events-none"></div>
@@ -140,14 +139,14 @@ const DeepfakeScanner: React.FC = () => {
                       </label>
                   </div>
               ) : (
-                  <div className={`relative bg-slate-950 rounded-[32px] overflow-hidden shadow-2xl border border-slate-800 flex items-center justify-center group ${isSeniorMode ? 'h-[500px]' : 'h-[500px]'}`}>
+                  <div className={`relative bg-slate-950 rounded-[32px] overflow-hidden shadow-2xl border border-slate-800 flex items-center justify-center group h-[500px]`}>
                       
                       {/* Cyberpunk Grid */}
                       <div className="absolute inset-0 bg-[linear-gradient(rgba(0,255,128,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(0,255,128,0.03)_1px,transparent_1px)] bg-[size:30px_30px] pointer-events-none"></div>
                       
                       {/* Scanning Laser */}
                       {status === 'analyzing' && (
-                          <div className="absolute inset-0 z-30 pointer-events-none border-b-[3px] border-green-400/80 animate-[scan-line_2s_linear_infinite] shadow-[0_0_20px_rgba(74,222,128,0.5)] bg-gradient-to-b from-transparent via-green-500/10 to-transparent h-[15%]"></div>
+                          <div className="absolute inset-0 z-30 pointer-events-none border-b-[3px] border-green-400/80 animate-scan-line shadow-[0_0_20px_rgba(74,222,128,0.5)] bg-gradient-to-b from-transparent via-green-500/10 to-transparent h-[15%]"></div>
                       )}
 
                       <button onClick={reset} disabled={status === 'analyzing'} className="absolute top-4 right-4 z-40 p-2 bg-black/40 hover:bg-red-500 text-white rounded-full transition-colors backdrop-blur-md border border-white/10">
