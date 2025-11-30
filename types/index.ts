@@ -65,6 +65,7 @@ export interface User {
   id: string;
   name: string;
   phone: string;
+  email?: string;
   contacts: ContactItem[];
   contactsPermission: boolean;
   alertHistory: AlertHistoryItem[];
