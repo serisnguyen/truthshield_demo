@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { X, Mic, CheckCircle, Activity, Fingerprint, Users, User, RefreshCw, Play } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { saveVoiceProfile } from '../services/storageService';
@@ -30,8 +30,45 @@ const VoiceSetupModal: React.FC<VoiceSetupModalProps> = ({ onClose, initialTab =
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
   const streamRef = useRef<MediaStream | null>(null);
+  const modalRef = useRef<HTMLDivElement>(null);
+  const closeButtonRef = useRef<HTMLButtonElement>(null);
 
   const RECORDING_DURATION = 15; // Reduced to 15s for better UX
+
+  // Focus Trap and Escape Key Handler
+  useEffect(() => {
+    // Focus close button on mount
+    closeButtonRef.current?.focus();
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        onClose();
+      }
+
+      if (e.key === 'Tab' && modalRef.current) {
+        const focusableElements = modalRef.current.querySelectorAll(
+          'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+        );
+        const firstElement = focusableElements[0] as HTMLElement;
+        const lastElement = focusableElements[focusableElements.length - 1] as HTMLElement;
+
+        if (e.shiftKey) {
+          if (document.activeElement === firstElement) {
+            e.preventDefault();
+            lastElement.focus();
+          }
+        } else {
+          if (document.activeElement === lastElement) {
+            e.preventDefault();
+            firstElement.focus();
+          }
+        }
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [onClose]);
 
   // Prompts for Self
   const promptsSelf = [
@@ -53,6 +90,13 @@ const VoiceSetupModal: React.FC<VoiceSetupModalProps> = ({ onClose, initialTab =
 
   const currentPrompts = activeTab === 'self' ? promptsSelf : promptsFamily;
 
+  const stopRecording = useCallback(() => {
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
+        mediaRecorderRef.current.stop();
+        setStep('processing');
+    }
+  }, []);
+
   useEffect(() => {
     let interval: any;
     if (step === 'recording') {
@@ -72,7 +116,7 @@ const VoiceSetupModal: React.FC<VoiceSetupModalProps> = ({ onClose, initialTab =
         }, 1000);
     }
     return () => clearInterval(interval);
-  }, [step, currentPrompts]);
+  }, [step, currentPrompts, stopRecording]);
 
   // Cleanup audio url on unmount
   useEffect(() => {
@@ -151,7 +195,10 @@ const VoiceSetupModal: React.FC<VoiceSetupModalProps> = ({ onClose, initialTab =
             }
             
             // Cleanup tracks
-            stream.getTracks().forEach(track => track.stop());
+            if (streamRef.current) {
+                streamRef.current.getTracks().forEach(track => track.stop());
+                streamRef.current = null;
+            }
         };
 
         mediaRecorder.start();
@@ -160,14 +207,12 @@ const VoiceSetupModal: React.FC<VoiceSetupModalProps> = ({ onClose, initialTab =
 
     } catch (err) {
         console.error("Microphone access error:", err);
+        // CRITICAL FIX: Ensure stream is cleaned up if error occurs after stream creation
+        if (streamRef.current) {
+            streamRef.current.getTracks().forEach(track => track.stop());
+            streamRef.current = null;
+        }
         setErrorMessage("Vui lòng cấp quyền Microphone để ghi âm.");
-    }
-  };
-
-  const stopRecording = () => {
-    if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
-        mediaRecorderRef.current.stop();
-        setStep('processing');
     }
   };
 
@@ -189,15 +234,31 @@ const VoiceSetupModal: React.FC<VoiceSetupModalProps> = ({ onClose, initialTab =
   }, []);
 
   return (
-    <div className="fixed inset-0 z-[90] bg-slate-900/80 backdrop-blur-md flex items-center justify-center p-4 animate-in zoom-in duration-300">
-      <div className="bg-white w-full max-w-md rounded-3xl shadow-2xl p-6 text-center relative overflow-hidden flex flex-col max-h-[90vh]">
-        <button onClick={onClose} className="absolute top-4 right-4 text-slate-400 hover:text-slate-800 z-10">
+    <div 
+        className="fixed inset-0 z-[90] bg-slate-900/80 backdrop-blur-md flex items-center justify-center p-4 animate-in zoom-in duration-300"
+        onClick={onClose}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="voice-setup-title"
+    >
+      <div 
+        ref={modalRef}
+        className="bg-white w-full max-w-md rounded-3xl shadow-2xl p-6 text-center relative overflow-hidden flex flex-col max-h-[90vh] focus:outline-none"
+        onClick={(e) => e.stopPropagation()} // FIX: Stop click propagation
+        tabIndex={-1}
+      >
+        <button 
+            ref={closeButtonRef}
+            onClick={onClose} 
+            className="absolute top-4 right-4 text-slate-400 hover:text-slate-800 z-10 focus:ring-2 focus:ring-blue-500 rounded-full"
+            aria-label="Đóng"
+        >
            <X size={24} />
         </button>
 
         {/* ERROR MESSAGE */}
         {errorMessage && (
-            <div className="bg-red-50 border border-red-200 text-red-600 p-3 rounded-xl text-sm font-bold mb-4 flex items-center gap-2">
+            <div className="bg-red-50 border border-red-200 text-red-600 p-3 rounded-xl text-sm font-bold mb-4 flex items-center gap-2" role="alert">
                 <RefreshCw size={16} /> {errorMessage}
             </div>
         )}
@@ -229,7 +290,7 @@ const VoiceSetupModal: React.FC<VoiceSetupModalProps> = ({ onClose, initialTab =
                             <Fingerprint className="text-blue-600" size={32} />
                             <div className="absolute inset-0 border-4 border-blue-200 rounded-full animate-ping opacity-20"></div>
                         </div>
-                        <h2 className="text-2xl font-bold text-slate-900 mb-2">Bảo Vệ Danh Tính</h2>
+                        <h2 id="voice-setup-title" className="text-2xl font-bold text-slate-900 mb-2">Bảo Vệ Danh Tính</h2>
                         <p className="text-slate-500 text-sm mb-6 px-4">
                             Tạo "chữ ký sinh trắc học" cho chính bạn bằng Micro. Ngăn kẻ xấu giả mạo giọng nói của bạn.
                         </p>
@@ -246,7 +307,7 @@ const VoiceSetupModal: React.FC<VoiceSetupModalProps> = ({ onClose, initialTab =
                             <Users className="text-purple-600" size={32} />
                             <div className="absolute inset-0 border-4 border-purple-200 rounded-full animate-ping opacity-20"></div>
                         </div>
-                        <h2 className="text-2xl font-bold text-slate-900 mb-2">Thêm Giọng Người Thân</h2>
+                        <h2 id="voice-setup-title" className="text-2xl font-bold text-slate-900 mb-2">Thêm Giọng Người Thân</h2>
                         <p className="text-slate-500 text-sm mb-6 px-4">
                             Nhờ con/cháu ghi âm trực tiếp. Hệ thống sẽ dùng mẫu này để so khớp khi có cuộc gọi đến.
                         </p>
@@ -286,7 +347,7 @@ const VoiceSetupModal: React.FC<VoiceSetupModalProps> = ({ onClose, initialTab =
 
         {/* STEP 2: RECORDING */}
         {step === 'recording' && (
-            <div className="animate-in fade-in duration-300 pt-8">
+            <div className="animate-in fade-in duration-300 pt-8" role="status" aria-label="Đang ghi âm">
                 <div className="mb-8">
                     <span className="inline-block px-3 py-1 bg-red-100 text-red-600 text-xs font-bold rounded-full animate-pulse mb-4">
                         ● ĐANG GHI ÂM THỰC TẾ
@@ -297,7 +358,7 @@ const VoiceSetupModal: React.FC<VoiceSetupModalProps> = ({ onClose, initialTab =
                     </h3>
                     
                     {/* Visual Sound Wave */}
-                    <div className="flex items-center justify-center gap-1 h-16 mb-4">
+                    <div className="flex items-center justify-center gap-1 h-16 mb-4" aria-hidden="true">
                         {[...Array(12)].map((_, i) => (
                             <div 
                                 key={i} 
@@ -333,7 +394,7 @@ const VoiceSetupModal: React.FC<VoiceSetupModalProps> = ({ onClose, initialTab =
 
         {/* STEP 3: PROCESSING */}
         {step === 'processing' && (
-            <div className="animate-in zoom-in duration-500 py-10">
+            <div className="animate-in zoom-in duration-500 py-10" role="status">
                 <div className="relative w-24 h-24 mx-auto mb-6">
                     <div className="absolute inset-0 border-4 border-slate-100 rounded-full"></div>
                     <div className={`absolute inset-0 border-4 rounded-full border-t-transparent animate-spin ${activeTab === 'self' ? 'border-blue-600' : 'border-purple-600'}`}></div>

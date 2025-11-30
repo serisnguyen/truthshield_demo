@@ -1,22 +1,31 @@
 
 import React, { useState, useMemo, useCallback } from 'react';
-import { MessageSquareText, Sparkles, AlertTriangle, CheckCircle, Copy, Search, ArrowRight, ShieldAlert, ChevronDown, ChevronUp, Clock, Trash2, Share2 } from 'lucide-react';
+import { MessageSquareText, Sparkles, AlertTriangle, CheckCircle, Copy, Search, ArrowRight, ShieldAlert, ChevronDown, ChevronUp, Clock, Trash2, Share2, Crown, Lock } from 'lucide-react';
 import { analyzeMessageRisk } from '../services/aiService';
-import { useAuth } from '../context/AuthContext';
+import { useAuth, LIMITS } from '../context/AuthContext';
+import PremiumUpgradeModal from './PremiumUpgradeModal';
 
 const MessageGuard: React.FC = () => {
-  const { isSeniorMode, user, addMessageAnalysis, clearMessageHistory } = useAuth();
+  const { isSeniorMode, user, addMessageAnalysis, clearMessageHistory, checkLimit, incrementUsage } = useAuth();
   const [input, setInput] = useState('');
   const [analyzing, setAnalyzing] = useState(false);
   const [result, setResult] = useState<'safe' | 'suspicious' | 'scam' | null>(null);
   const [explanation, setExplanation] = useState('');
   const [showHistory, setShowHistory] = useState(false);
+  const [showPremiumModal, setShowPremiumModal] = useState(false);
 
   // Memoize history sorting or processing if needed in future
   const hasHistory = useMemo(() => user?.messageHistory && user.messageHistory.length > 0, [user?.messageHistory]);
 
   const analyzeMessage = useCallback(async () => {
     if (!input.trim()) return;
+
+    // CHECK LIMITS
+    if (!checkLimit('message')) {
+        setShowPremiumModal(true);
+        return;
+    }
+
     setAnalyzing(true);
     setResult(null);
 
@@ -30,6 +39,8 @@ const MessageGuard: React.FC = () => {
         result: analysis.result,
         explanation: analysis.explanation
       });
+      
+      incrementUsage('message');
 
     } catch (error) {
       setResult('suspicious');
@@ -37,7 +48,7 @@ const MessageGuard: React.FC = () => {
     } finally {
       setAnalyzing(false);
     }
-  }, [input, addMessageAnalysis]);
+  }, [input, addMessageAnalysis, checkLimit, incrementUsage]);
 
   const handleShare = useCallback(async () => {
     if (!result) return;
@@ -72,15 +83,25 @@ const MessageGuard: React.FC = () => {
       }
   };
 
+  const remaining = user?.plan === 'premium' ? 999 : Math.max(0, LIMITS.FREE.MESSAGE_SCANS - (user?.usage?.messageScans || 0));
+  const isLimitReached = user?.plan === 'free' && remaining === 0;
+
   return (
     <div className={`p-4 pt-20 md:pt-10 pb-32 min-h-screen flex flex-col max-w-3xl mx-auto animate-in fade-in duration-300 ${isSeniorMode ? 'bg-slate-50' : ''}`}>
-      <div className="mb-6 md:mb-8">
-        <h2 className={`${isSeniorMode ? 'text-4xl' : 'text-2xl md:text-3xl'} font-bold text-slate-800 mb-2`}>
-          Kiểm Tra <span className={isSeniorMode ? "text-pink-600" : "text-blue-600"}>Tin Nhắn</span>
-        </h2>
-        <p className={`${isSeniorMode ? 'text-xl text-slate-600 font-medium' : 'text-slate-500 text-sm md:text-base'}`}>
-          {isSeniorMode ? 'Bác dán hoặc nhập tin nhắn lạ vào ô bên dưới:' : 'Dán nội dung tin nhắn vào bên dưới để hệ thống AI kiểm tra.'}
-        </p>
+      <div className="mb-6 md:mb-8 flex justify-between items-end">
+        <div>
+            <h2 className={`${isSeniorMode ? 'text-4xl' : 'text-2xl md:text-3xl'} font-bold text-slate-800 mb-2`}>
+            Kiểm Tra <span className={isSeniorMode ? "text-pink-600" : "text-blue-600"}>Tin Nhắn</span>
+            </h2>
+            <p className={`${isSeniorMode ? 'text-xl text-slate-600 font-medium' : 'text-slate-500 text-sm md:text-base'}`}>
+            {isSeniorMode ? 'Bác dán hoặc nhập tin nhắn lạ vào ô bên dưới:' : 'Dán nội dung tin nhắn vào bên dưới để hệ thống AI kiểm tra.'}
+            </p>
+        </div>
+        {user?.plan === 'free' && (
+            <div className={`px-3 py-1 rounded-lg text-xs font-bold whitespace-nowrap ${isLimitReached ? 'bg-red-100 text-red-600' : 'bg-amber-100 text-amber-800'}`}>
+                {isLimitReached ? "Hết lượt miễn phí" : `Còn ${remaining} lượt`}
+            </div>
+        )}
       </div>
 
       <div className="flex-1 flex flex-col gap-4 md:gap-6">
@@ -88,7 +109,26 @@ const MessageGuard: React.FC = () => {
         {/* Input Area */}
         <div className={`relative bg-white rounded-3xl shadow-sm border overflow-hidden ${isSeniorMode ? 'border-slate-300 shadow-md' : 'border-slate-200'}`}>
           {!isSeniorMode && <div className="p-1 bg-gradient-to-r from-blue-400 to-purple-400 opacity-20"></div>}
-          <div className="p-4 md:p-6">
+          
+          <div className="p-4 md:p-6 relative">
+            
+            {/* Limit Reached Overlay */}
+            {isLimitReached && (
+                <div className="absolute inset-0 z-20 bg-slate-50/80 backdrop-blur-sm flex flex-col items-center justify-center p-6 text-center">
+                    <div className="bg-white p-4 rounded-full shadow-lg mb-3">
+                        <Lock size={32} className="text-red-500" />
+                    </div>
+                    <h3 className="text-xl font-bold text-slate-900 mb-1">Đã hết lượt quét miễn phí hôm nay</h3>
+                    <p className="text-slate-500 text-sm mb-4">Nâng cấp Premium để quét không giới hạn</p>
+                    <button 
+                        onClick={() => setShowPremiumModal(true)}
+                        className="bg-slate-900 text-white px-6 py-3 rounded-xl font-bold flex items-center gap-2 shadow-lg hover:scale-105 transition-transform"
+                    >
+                        <Crown size={18} className="text-yellow-400 fill-current" /> Nâng cấp ngay
+                    </button>
+                </div>
+            )}
+
             <textarea 
               className={`w-full bg-slate-50 text-slate-900 placeholder-slate-400 focus:outline-none resize-none p-3 md:p-4 rounded-xl border focus:border-blue-400 transition-colors ${
                   isSeniorMode ? 'text-2xl h-48 border-slate-300 font-medium' : 'text-base md:text-lg h-32 md:h-40 border-slate-200'
@@ -96,6 +136,7 @@ const MessageGuard: React.FC = () => {
               placeholder={isSeniorMode ? "Ví dụ: Con đang cấp cứu, chuyển tiền gấp..." : "Ví dụ: 'Con đang cấp cứu, chuyển tiền gấp vào số này...'"}
               value={input}
               onChange={(e) => setInput(e.target.value)}
+              disabled={isLimitReached}
             ></textarea>
             
             <div className="flex flex-col md:flex-row gap-3 md:justify-between md:items-center mt-4 pt-4 border-t border-slate-100">
@@ -108,6 +149,7 @@ const MessageGuard: React.FC = () => {
                         alert("Không thể truy cập bộ nhớ tạm. Vui lòng dán thủ công.");
                     }
                  }}
+                 disabled={isLimitReached}
                  className={`font-medium flex items-center justify-center md:justify-start gap-1.5 transition-colors py-3 md:py-0 bg-slate-100 md:bg-transparent rounded-xl md:rounded-none ${
                      isSeniorMode ? 'text-lg text-slate-700 hover:bg-slate-200' : 'text-sm text-slate-500 hover:text-blue-600'
                  }`}
@@ -116,12 +158,12 @@ const MessageGuard: React.FC = () => {
                </button>
                <button 
                  onClick={analyzeMessage}
-                 disabled={analyzing || !input}
+                 disabled={analyzing || !input || isLimitReached}
                  className={`text-white w-full md:w-auto rounded-xl font-bold flex items-center justify-center gap-2 transition-all shadow-md active:scale-95 ${
                      isSeniorMode 
                      ? 'bg-pink-600 hover:bg-pink-700 text-xl px-8 py-4 shadow-pink-200' 
                      : 'bg-blue-600 hover:bg-blue-700 px-6 py-3 text-base shadow-blue-200'
-                 } ${analyzing ? 'opacity-70' : ''}`}
+                 } ${analyzing || isLimitReached ? 'opacity-70' : ''}`}
                >
                  {analyzing ? <div className="w-6 h-6 border-2 border-white/30 border-t-white rounded-full animate-spin"></div> : <Sparkles size={isSeniorMode ? 28 : 20} />}
                  {analyzing ? 'Đang kiểm tra...' : 'KIỂM TRA NGAY'}
@@ -247,6 +289,7 @@ const MessageGuard: React.FC = () => {
         )}
 
       </div>
+      {showPremiumModal && <PremiumUpgradeModal onClose={() => setShowPremiumModal(false)} triggerSource="message_limit" />}
     </div>
   );
 };

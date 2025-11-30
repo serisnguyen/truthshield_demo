@@ -7,36 +7,36 @@ import {
   MessageAnalysisLog, 
   CallLogItem,
   PhoneLookupResult,
-  FamilyVoiceProfile,
-  ContactItem
+  ContactItem,
+  SubscriptionPlan
 } from '../types';
 import { useUserProfile } from '../hooks/useUserProfile';
 
 // Re-export types
 export * from '../types';
 
-// --- MOCK GLOBAL DATABASES ---
-
-const MOCK_GLOBAL_VOICE_REGISTRY: Record<string, boolean> = {
-    '0901234567': true, 
-    '0912345678': true, 
-    '0987654321': false,
-    '0999999999': true,
+// --- CONSTANTS ---
+export const LIMITS = {
+    FREE: {
+        DEEPFAKE_SCANS: 2,
+        MESSAGE_SCANS: 5,
+        CALL_LOOKUPS: 3
+    }
 };
 
-// Mock iCallMe-style Community Data
+// --- MOCK CARRIER / COMMUNITY DATABASE ---
 const MOCK_COMMUNITY_DB: Record<string, PhoneLookupResult> = {
     '0888999000': {
         phoneNumber: '0888999000',
-        carrier: 'Vinaphone',
+        carrier: 'Vinaphone - Cảnh Báo Spam',
         tags: ['scam'],
         reportCount: 1245,
         reputationScore: 5,
-        communityLabel: 'Giả danh Công an'
+        communityLabel: 'Giả danh Công an (Đã xác minh)'
     },
     '0909112233': {
         phoneNumber: '0909112233',
-        carrier: 'Mobifone',
+        carrier: 'Mobifone - Doanh Nghiệp',
         tags: ['delivery', 'safe'],
         reportCount: 0,
         reputationScore: 95,
@@ -44,7 +44,7 @@ const MOCK_COMMUNITY_DB: Record<string, PhoneLookupResult> = {
     },
     '02477778888': {
         phoneNumber: '02477778888',
-        carrier: 'Cố định',
+        carrier: 'VNPT Cố định',
         tags: ['spam', 'business'],
         reportCount: 342,
         reputationScore: 40,
@@ -57,7 +57,6 @@ const MOCK_PHONE_CONTACTS = [
     { name: 'Bố', phone: '0912345678' },
     { name: 'Anh Trai', phone: '0987654321' },
     { name: 'Chị Gái', phone: '0999888777' }, 
-    { name: 'Sếp', phone: '0911223344' }, 
 ];
 
 interface AuthContextType {
@@ -67,8 +66,6 @@ interface AuthContextType {
   completeOnboarding: () => void;
   login: (phone: string) => Promise<void>;
   logout: () => void;
-  syncContacts: () => Promise<void>;
-  checkGlobalVoiceRegistry: (phone: string) => boolean;
   incomingCall: CallLogItem | null;
   setIncomingCall: (call: CallLogItem | null) => void;
   addAlertToHistory: (alert: Omit<AlertHistoryItem, 'id' | 'timestamp'>) => void;
@@ -76,7 +73,6 @@ interface AuthContextType {
   addMessageAnalysis: (log: Omit<MessageAnalysisLog, 'id' | 'timestamp'>) => void;
   clearMessageHistory: () => void;
   updateMessageHistoryItem: (id: string, result: 'safe' | 'suspicious' | 'scam', explanation: string) => void;
-  setVoiceProfileStatus: (status: boolean) => void;
   updateCallHistoryItem: (callId: string, updates: Partial<CallLogItem>) => void;
   updateSettings: (settings: Partial<User>) => void;
   blockNumber: (phone: string) => void;
@@ -84,20 +80,23 @@ interface AuthContextType {
   isOnline: boolean;
   isSeniorMode: boolean;
   
-  // New Features
+  // Features
   lookupPhoneNumber: (phone: string) => Promise<PhoneLookupResult | null>;
   reportPhoneNumber: (phone: string, type: 'scam' | 'spam' | 'safe', label: string) => Promise<void>;
   toggleSeniorMode: () => void;
+  upgradeSubscription: (plan?: SubscriptionPlan) => void;
+  
+  // Usage Checks
+  checkLimit: (feature: 'deepfake' | 'message' | 'lookup') => boolean;
+  incrementUsage: (feature: 'deepfake' | 'message' | 'lookup') => void;
 
-  // Added missing properties
   role: 'elder' | 'user';
   incomingSOS: boolean;
   setIncomingSOS: (value: boolean) => void;
   addEmergencyContact: (contact: Omit<EmergencyContact, 'id'>) => void;
   removeEmergencyContact: (id: string) => void;
   regenerateFamilyId: () => void;
-  addFamilyVoiceProfile: (profile: Omit<FamilyVoiceProfile, 'id' | 'timestamp'>) => void;
-  addContact: (contact: Omit<ContactItem, 'id' | 'hasVoiceProfile' | 'isAppUser' | 'status'>) => void;
+  addContact: (contact: Omit<ContactItem, 'id' | 'isAppUser'>) => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -121,16 +120,57 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
   }, []);
 
+  // Sync state across tabs
+  useEffect(() => {
+    const handleStorageChange = (e: StorageEvent) => {
+        if (e.key === 'truthshield_profile_cache' && e.newValue) {
+            try {
+                const updatedUser = JSON.parse(e.newValue);
+                setUser(updatedUser);
+            } catch (err) {
+                console.error('Failed to sync user from storage', err);
+            }
+        }
+    };
+    
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
+  }, []);
+
+  // Check and Reset Daily Usage on Load
+  const checkDailyReset = (userData: User): User => {
+      const today = new Date().toISOString().split('T')[0];
+      if (userData.usage?.lastResetDate !== today) {
+          return {
+              ...userData,
+              usage: {
+                  deepfakeScans: 0,
+                  messageScans: 0,
+                  callLookups: 0,
+                  lastResetDate: today
+              }
+          };
+      }
+      return userData;
+  };
+
   useEffect(() => {
     const token = localStorage.getItem('truthshield_token');
     if (token) {
       try {
         const storedProfile = localStorage.getItem('truthshield_profile_cache');
         if (storedProfile) {
-          const parsedUser = JSON.parse(storedProfile);
-          // Defaults for new fields
+          let parsedUser = JSON.parse(storedProfile);
           if (parsedUser.isSeniorMode === undefined) parsedUser.isSeniorMode = false;
           if (parsedUser.blockedNumbers === undefined) parsedUser.blockedNumbers = [];
+          if (parsedUser.plan === undefined) parsedUser.plan = 'free';
+          
+          // Initialize usage if missing
+          if (!parsedUser.usage) {
+              parsedUser.usage = { deepfakeScans: 0, messageScans: 0, callLookups: 0, lastResetDate: new Date().toISOString().split('T')[0] };
+          }
+
+          parsedUser = checkDailyReset(parsedUser);
           setUser(parsedUser);
         }
       } catch (e) {
@@ -168,22 +208,27 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             id: Date.now().toString(),
             name: "Người dùng", 
             phone: phone,
-            hasVoiceProfile: false,
-            contacts: [],
+            contacts: MOCK_PHONE_CONTACTS.map(c => ({ id: c.phone, name: c.name, phone: c.phone, isAppUser: false })),
             alertHistory: [],
             messageHistory: [],
             callHistory: [],
-            contactsPermission: false,
+            contactsPermission: true,
             emergencyContacts: [],
-            familyVoiceProfiles: [],
             riskThreshold: 70,
-            autoRecordHighRisk: true,
             autoHangupHighRisk: false,
             isSeniorMode: false,
-            blockedNumbers: []
+            blockedNumbers: [],
+            plan: 'free',
+            usage: {
+                deepfakeScans: 0,
+                messageScans: 0,
+                callLookups: 0,
+                lastResetDate: new Date().toISOString().split('T')[0]
+            }
           };
         }
 
+        finalUser = checkDailyReset(finalUser);
         persistUser(finalUser);
         localStorage.setItem('truthshield_token', 'mock_token_' + phone);
         resolve();
@@ -202,32 +247,30 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setIsOnboarding(false);
   };
 
-  const syncContacts = async () => {
-      if (!user) return;
-      await new Promise<void>(r => setTimeout(r, 1500));
-      
-      const syncedContacts = MOCK_PHONE_CONTACTS.map(contact => {
-          const hasGlobalProfile = MOCK_GLOBAL_VOICE_REGISTRY[contact.phone] || false;
-          return {
-              id: contact.phone, 
-              name: contact.name,
-              phone: contact.phone,
-              hasVoiceProfile: hasGlobalProfile,
-              isAppUser: hasGlobalProfile, 
-              status: hasGlobalProfile ? 'verified' : 'unverified'
-          };
-      });
+  // --- FEATURE GATING & LIMITS ---
 
-      const updatedUser = { 
-          ...user, 
-          contacts: syncedContacts as any,
-          contactsPermission: true 
-      };
-      persistUser(updatedUser);
+  const checkLimit = (feature: 'deepfake' | 'message' | 'lookup'): boolean => {
+      if (!user) return false;
+      if (user.plan === 'premium' || user.plan === 'family') return true; // Unlimited for Premium/Family
+
+      const usage = user.usage;
+      if (feature === 'deepfake') return usage.deepfakeScans < LIMITS.FREE.DEEPFAKE_SCANS;
+      if (feature === 'message') return usage.messageScans < LIMITS.FREE.MESSAGE_SCANS;
+      if (feature === 'lookup') return usage.callLookups < LIMITS.FREE.CALL_LOOKUPS;
+      
+      return false;
   };
 
-  const checkGlobalVoiceRegistry = (phone: string) => {
-      return MOCK_GLOBAL_VOICE_REGISTRY[phone] || false;
+  const incrementUsage = (feature: 'deepfake' | 'message' | 'lookup') => {
+      if (!user || user.plan === 'premium' || user.plan === 'family') return;
+
+      const newUsage = { ...user.usage };
+      if (feature === 'deepfake') newUsage.deepfakeScans += 1;
+      if (feature === 'message') newUsage.messageScans += 1;
+      if (feature === 'lookup') newUsage.callLookups += 1;
+
+      const updatedUser = { ...user, usage: newUsage };
+      persistUser(updatedUser);
   };
 
   // --- NEW FEATURES IMPLEMENTATION ---
@@ -239,24 +282,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
               if (result) {
                   resolve(result);
               } else {
-                  // Simulate clean number
                   resolve({
                       phoneNumber: phone,
-                      carrier: 'Unknown',
+                      carrier: 'Unknown / Chưa xác định',
                       tags: [],
                       reportCount: 0,
-                      reputationScore: 80, // Neutral/Good
-                      communityLabel: 'Chưa có báo cáo'
+                      reputationScore: 80,
+                      communityLabel: 'Chưa có báo cáo từ cộng đồng'
                   });
               }
-          }, 800);
+          }, 600);
       });
   };
 
   const reportPhoneNumber = async (phone: string, type: 'scam' | 'spam' | 'safe', label: string) => {
       return new Promise<void>((resolve) => {
           setTimeout(() => {
-              // Update mock DB locally for demo
               MOCK_COMMUNITY_DB[phone] = {
                   phoneNumber: phone,
                   carrier: 'Unknown',
@@ -268,6 +309,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
               resolve();
           }, 1000);
       });
+  };
+
+  const upgradeSubscription = (plan: SubscriptionPlan = 'premium') => {
+      if (user) {
+          const updated = { ...user, plan };
+          persistUser(updated);
+      }
   };
 
   const toggleSeniorMode = () => {
@@ -287,8 +335,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       completeOnboarding,
       login, 
       logout,
-      syncContacts,
-      checkGlobalVoiceRegistry,
       incomingCall,
       setIncomingCall,
       isOnline,
@@ -296,6 +342,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       lookupPhoneNumber,
       reportPhoneNumber,
       toggleSeniorMode,
+      upgradeSubscription,
+      checkLimit,
+      incrementUsage,
       role,
       incomingSOS,
       setIncomingSOS,

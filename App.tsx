@@ -2,7 +2,7 @@
 import React, { useState, Suspense, lazy } from 'react';
 import { 
   Shield, MessageSquareText, 
-  Bot, BookOpen, UserCircle, BellRing, Phone, Search, Globe, ScanFace, Grip, Sparkles
+  Bot, BookOpen, UserCircle, BellRing, Search, ScanFace, Grip, Sparkles
 } from 'lucide-react';
 import AlertOverlay from './components/AlertOverlay';
 import { AuthProvider, useAuth } from './context/AuthContext';
@@ -12,17 +12,15 @@ import CallOverlay from './components/CallOverlay';
 
 // Lazy Load Components
 const HomeScreen = lazy(() => import('./components/HomeScreen'));
-const PhoneApp = lazy(() => import('./components/PhoneApp'));
-const MessagesApp = lazy(() => import('./components/MessagesApp'));
+const MessageGuard = lazy(() => import('./components/MessageGuard')); // Reused as main message app
 const ChatScreen = lazy(() => import('./components/ChatScreen'));
 const ProfileScreen = lazy(() => import('./components/ProfileScreen'));
 const ScamLibraryScreen = lazy(() => import('./components/ScamLibraryScreen'));
 const CallHistoryScreen = lazy(() => import('./components/CallHistoryScreen'));
 const LookupScreen = lazy(() => import('./components/LookupScreen'));
-const CommunityScreen = lazy(() => import('./components/CommunityScreen'));
 const DeepfakeScanner = lazy(() => import('./components/DeepfakeScanner'));
 
-export type Tab = 'home' | 'phone' | 'messages' | 'chat' | 'profile' | 'library' | 'history' | 'lookup' | 'community' | 'scanner';
+export type Tab = 'home' | 'messagescan' | 'chat' | 'profile' | 'library' | 'history' | 'lookup' | 'scanner';
 
 const LoadingFallback = () => (
   <div className="flex-1 flex flex-col items-center justify-center h-full">
@@ -53,14 +51,12 @@ const AppContent: React.FC = () => {
     switch (activeTab) {
       case 'home': return <HomeScreen onNavigate={setActiveTab} />;
       case 'scanner': return <DeepfakeScanner />;
-      case 'phone': return <PhoneApp />;
-      case 'messages': return <MessagesApp />;
+      case 'messagescan': return <MessageGuard />;
       case 'chat': return <ChatScreen />;
       case 'profile': return <ProfileScreen />;
       case 'library': return <ScamLibraryScreen />;
       case 'history': return <CallHistoryScreen onBack={() => setActiveTab('profile')} />;
       case 'lookup': return <LookupScreen onBack={() => setActiveTab('home')} />;
-      case 'community': return <CommunityScreen />;
       default: return <HomeScreen onNavigate={setActiveTab} />;
     }
   };
@@ -89,17 +85,15 @@ const AppContent: React.FC = () => {
         <nav className="flex-1 py-6 px-4 space-y-2 overflow-y-auto no-scrollbar">
           <p className="px-4 text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Trung tâm chính</p>
           <NavSideItem icon={<Shield size={20} />} label="Tổng Quan" isActive={activeTab === 'home'} onClick={() => setActiveTab('home')} />
-          <NavSideItem icon={<Phone size={20} />} label="Điện Thoại" isActive={activeTab === 'phone'} onClick={() => setActiveTab('phone')} />
-          <NavSideItem icon={<MessageSquareText size={20} />} label="Tin Nhắn" isActive={activeTab === 'messages'} onClick={() => setActiveTab('messages')} />
+          <NavSideItem icon={<MessageSquareText size={20} />} label="Quét Tin Nhắn" isActive={activeTab === 'messagescan'} onClick={() => setActiveTab('messagescan')} />
           
           <p className="px-4 text-xs font-bold text-slate-400 uppercase tracking-wider mb-2 mt-6">Công cụ AI</p>
           <NavSideItem icon={<ScanFace size={20} />} label="Quét Deepfake" isActive={activeTab === 'scanner'} onClick={() => setActiveTab('scanner')} />
           <NavSideItem icon={<Search size={20} />} label="Tra Cứu Số" isActive={activeTab === 'lookup'} onClick={() => setActiveTab('lookup')} />
           <NavSideItem icon={<Bot size={20} />} label="Trợ Lý AI" isActive={activeTab === 'chat'} onClick={() => setActiveTab('chat')} />
           
-          <p className="px-4 text-xs font-bold text-slate-400 uppercase tracking-wider mb-2 mt-6">Cộng đồng</p>
-          <NavSideItem icon={<Globe size={20} />} label="Cộng Đồng" isActive={activeTab === 'community'} onClick={() => setActiveTab('community')} />
-          <NavSideItem icon={<BookOpen size={20} />} label="Thư Viện Lừa Đảo" isActive={activeTab === 'library'} onClick={() => setActiveTab('library')} />
+          <p className="px-4 text-xs font-bold text-slate-400 uppercase tracking-wider mb-2 mt-6">Thư viện</p>
+          <NavSideItem icon={<BookOpen size={20} />} label="Thư Viện Cảnh Báo" isActive={activeTab === 'library'} onClick={() => setActiveTab('library')} />
           <NavSideItem icon={<UserCircle size={20} />} label="Cá Nhân" isActive={activeTab === 'profile'} onClick={() => setActiveTab('profile')} />
         </nav>
         
@@ -111,7 +105,9 @@ const AppContent: React.FC = () => {
                  </div>
                  <div className="flex-1 min-w-0">
                      <p className="text-sm font-bold text-slate-900 truncate">{user.name}</p>
-                     <p className="text-xs text-slate-600 truncate font-medium">Gói Premium</p>
+                     <p className="text-xs text-slate-600 truncate font-medium">
+                        {user.plan === 'family' ? 'Gói Gia Đình' : user.plan === 'premium' ? 'Gói Premium' : 'Thành viên Free'}
+                     </p>
                  </div>
              </div>
         </div>
@@ -138,7 +134,6 @@ const AppContent: React.FC = () => {
            </div>
         </div>
 
-        {/* IMPORTANT: Increased pb-40 to prevent content from being hidden behind bottom nav */}
         <div className="flex-1 overflow-y-auto pb-40 md:pb-0 scroll-smooth custom-scrollbar">
           <Suspense fallback={<LoadingFallback />}>
             {renderContent()}
@@ -148,8 +143,8 @@ const AppContent: React.FC = () => {
         {/* Mobile Dock (Floating Island) */}
         <div className="md:hidden fixed bottom-6 left-4 right-4 z-30 pointer-events-none">
           <div className={`glass-panel bg-white/95 shadow-[0_8px_30px_rgb(0,0,0,0.12)] border border-white/50 rounded-[32px] px-2 pointer-events-auto flex justify-around items-center max-w-sm mx-auto relative ${isSeniorMode ? 'py-4' : 'py-3'}`}>
-            <NavButton icon={<Phone size={isSeniorMode ? 28 : 24} />} label="Gọi" isActive={activeTab === 'phone'} onClick={() => setActiveTab('phone')} />
-            <NavButton icon={<MessageSquareText size={isSeniorMode ? 28 : 24} />} label="SMS" isActive={activeTab === 'messages'} onClick={() => setActiveTab('messages')} />
+            <NavButton icon={<MessageSquareText size={isSeniorMode ? 28 : 24} />} label="Quét SMS" isActive={activeTab === 'messagescan'} onClick={() => setActiveTab('messagescan')} />
+            <NavButton icon={<Search size={isSeniorMode ? 28 : 24} />} label="Tra Cứu" isActive={activeTab === 'lookup'} onClick={() => setActiveTab('lookup')} />
             
             <div className="relative -top-10 mx-2">
                 <button 

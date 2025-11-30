@@ -2,7 +2,6 @@
 import { 
   User, 
   EmergencyContact, 
-  FamilyVoiceProfile, 
   AlertHistoryItem, 
   MessageAnalysisLog, 
   CallLogItem,
@@ -16,15 +15,13 @@ interface UseUserProfileProps {
 
 export const useUserProfile = ({ user, persistUser }: UseUserProfileProps) => {
 
-  const addContact = (contact: Omit<ContactItem, 'id' | 'hasVoiceProfile' | 'isAppUser' | 'status'>) => {
+  const addContact = (contact: Omit<ContactItem, 'id' | 'isAppUser'>) => {
     if (user) {
       const newContact: ContactItem = {
         id: Date.now().toString(),
         name: contact.name,
         phone: contact.phone,
-        hasVoiceProfile: false,
         isAppUser: false,
-        status: 'unverified'
       };
       // Ensure contacts array exists
       const currentContacts = user.contacts || [];
@@ -47,18 +44,6 @@ export const useUserProfile = ({ user, persistUser }: UseUserProfileProps) => {
         ...user, 
         emergencyContacts: user.emergencyContacts.filter(c => c.id !== id) 
       };
-      persistUser(updatedUser);
-    }
-  };
-
-  const addFamilyVoiceProfile = (profile: Omit<FamilyVoiceProfile, 'id' | 'timestamp'>) => {
-    if (user) {
-      const newProfile: FamilyVoiceProfile = { 
-        ...profile, 
-        id: Date.now().toString(),
-        timestamp: Date.now()
-      };
-      const updatedUser = { ...user, familyVoiceProfiles: [...user.familyVoiceProfiles, newProfile] };
       persistUser(updatedUser);
     }
   };
@@ -127,13 +112,6 @@ export const useUserProfile = ({ user, persistUser }: UseUserProfileProps) => {
     }
   };
 
-  const setVoiceProfileStatus = (status: boolean) => {
-    if (user) {
-        const updatedUser = { ...user, hasVoiceProfile: status };
-        persistUser(updatedUser);
-    }
-  };
-
   const updateCallHistoryItem = (callId: string, updates: Partial<CallLogItem>) => {
     if (user) {
         const updatedHistory = user.callHistory.map(call => 
@@ -184,7 +162,6 @@ export const useUserProfile = ({ user, persistUser }: UseUserProfileProps) => {
     addContact,
     addEmergencyContact,
     removeEmergencyContact,
-    addFamilyVoiceProfile,
     addAlertToHistory,
     clearAlertHistory,
     addMessageAnalysis,
@@ -192,7 +169,6 @@ export const useUserProfile = ({ user, persistUser }: UseUserProfileProps) => {
     updateMessageHistoryItem,
     updateSecurityQuestions,
     updateSOSMessage,
-    setVoiceProfileStatus,
     updateCallHistoryItem,
     regenerateFamilyId,
     updateSettings,

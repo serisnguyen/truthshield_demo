@@ -34,6 +34,12 @@ const AlertHistoryScreen: React.FC<AlertHistoryScreenProps> = ({ onBack }) => {
     });
   };
 
+  const handleClearHistory = () => {
+    if (window.confirm("CẢNH BÁO: Bạn có chắc chắn muốn xóa toàn bộ lịch sử cảnh báo không? Hành động này không thể hoàn tác.")) {
+        clearAlertHistory();
+    }
+  };
+
   return (
     <div className={`p-6 pt-20 md:pt-10 pb-32 min-h-screen max-w-2xl mx-auto animate-in fade-in duration-300 ${isSeniorMode ? 'text-lg' : ''}`}>
         
@@ -42,6 +48,7 @@ const AlertHistoryScreen: React.FC<AlertHistoryScreenProps> = ({ onBack }) => {
             <button 
                 onClick={onBack}
                 className="p-2 hover:bg-slate-100 rounded-full transition-colors"
+                aria-label="Quay lại"
             >
                 <ArrowLeft size={isSeniorMode ? 32 : 24} className="text-slate-700" />
             </button>
@@ -51,13 +58,10 @@ const AlertHistoryScreen: React.FC<AlertHistoryScreenProps> = ({ onBack }) => {
             </div>
             <div className="ml-auto">
                 <button 
-                    onClick={() => {
-                        if (confirm("Bạn có chắc muốn xóa toàn bộ lịch sử?")) {
-                            clearAlertHistory();
-                        }
-                    }}
+                    onClick={handleClearHistory}
                     className="p-3 text-red-500 hover:bg-red-50 rounded-full transition-colors"
                     title="Xóa lịch sử"
+                    aria-label="Xóa toàn bộ lịch sử cảnh báo"
                 >
                     <Trash2 size={isSeniorMode ? 28 : 20} />
                 </button>

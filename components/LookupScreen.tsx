@@ -1,20 +1,23 @@
 
-import React, { useState } from 'react';
-import { Search, ShieldCheck, ShieldAlert, AlertTriangle, ThumbsDown, UserCheck, ArrowLeft, Loader2, PhoneOff, TrendingUp, Globe, BarChart3, Clock } from 'lucide-react';
-import { useAuth } from '../context/AuthContext';
+import React, { useState, useEffect } from 'react';
+import { Search, ShieldCheck, ShieldAlert, AlertTriangle, ThumbsDown, UserCheck, ArrowLeft, Loader2, PhoneOff, TrendingUp, Globe, BarChart3, Clock, Lock, Crown } from 'lucide-react';
+import { useAuth, LIMITS } from '../context/AuthContext';
 import { PhoneLookupResult } from '../types';
+import PremiumUpgradeModal from './PremiumUpgradeModal';
 
 interface LookupScreenProps {
     onBack: () => void;
 }
 
 const LookupScreen: React.FC<LookupScreenProps> = ({ onBack }) => {
-    const { lookupPhoneNumber, reportPhoneNumber, isSeniorMode } = useAuth();
+    const { lookupPhoneNumber, reportPhoneNumber, isSeniorMode, checkLimit, incrementUsage, user } = useAuth();
     const [searchTerm, setSearchTerm] = useState('');
+    const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
     const [result, setResult] = useState<PhoneLookupResult | null>(null);
     const [isLoading, setIsLoading] = useState(false);
     const [showReportModal, setShowReportModal] = useState(false);
     const [showSuggestions, setShowSuggestions] = useState(false);
+    const [showPremiumModal, setShowPremiumModal] = useState(false);
 
     // Mock Top Spammers Data
     const topSpammers = [
@@ -28,10 +31,24 @@ const LookupScreen: React.FC<LookupScreenProps> = ({ onBack }) => {
         "0909112233", "0888999000", "02477778888"
     ];
 
+    // FIX: Add debouncing
+    useEffect(() => {
+        const handler = setTimeout(() => {
+            setDebouncedSearchTerm(searchTerm);
+        }, 300);
+        return () => clearTimeout(handler);
+    }, [searchTerm]);
+
     const handleSearch = async (phoneToSearch?: string) => {
         const query = phoneToSearch || searchTerm;
         if (!query || query.length < 3) return;
         
+        // CHECK LIMITS
+        if (!checkLimit('lookup')) {
+            setShowPremiumModal(true);
+            return;
+        }
+
         setIsLoading(true);
         setResult(null);
         if (phoneToSearch) setSearchTerm(phoneToSearch);
@@ -40,6 +57,7 @@ const LookupScreen: React.FC<LookupScreenProps> = ({ onBack }) => {
         try {
             const data = await lookupPhoneNumber(query);
             setResult(data);
+            incrementUsage('lookup');
         } catch (e) {
             console.error(e);
         } finally {
@@ -81,23 +99,33 @@ const LookupScreen: React.FC<LookupScreenProps> = ({ onBack }) => {
         }
     };
 
+    const remaining = user?.plan === 'premium' ? 999 : Math.max(0, LIMITS.FREE.CALL_LOOKUPS - (user?.usage?.callLookups || 0));
+    const isLimitReached = user?.plan === 'free' && remaining === 0;
+
     return (
         <div className={`p-4 md:p-6 pt-20 md:pt-10 pb-32 min-h-screen max-w-3xl mx-auto animate-in fade-in ${isSeniorMode ? 'text-lg' : ''}`}>
             
             {/* Header */}
-            <div className="flex items-center gap-4 mb-6">
-                <button onClick={onBack} className="p-2 hover:bg-slate-100 rounded-full transition-colors">
-                    <ArrowLeft size={isSeniorMode ? 32 : 24} />
-                </button>
-                <div>
-                    <h2 className={`font-black text-slate-900 ${isSeniorMode ? 'text-3xl' : 'text-2xl'}`}>Tra Cứu Số</h2>
-                    <p className="text-slate-500 text-sm">Cơ sở dữ liệu Global Spam (Truecaller Integrated)</p>
+            <div className="flex items-center justify-between mb-6">
+                <div className="flex items-center gap-4">
+                    <button onClick={onBack} className="p-2 hover:bg-slate-100 rounded-full transition-colors">
+                        <ArrowLeft size={isSeniorMode ? 32 : 24} />
+                    </button>
+                    <div>
+                        <h2 className={`font-black text-slate-900 ${isSeniorMode ? 'text-3xl' : 'text-2xl'}`}>Tra Cứu Số</h2>
+                        <p className="text-slate-500 text-sm">Cơ sở dữ liệu Global Spam</p>
+                    </div>
                 </div>
+                {user?.plan === 'free' && (
+                    <div className={`px-3 py-1 rounded-lg text-xs font-bold whitespace-nowrap ${isLimitReached ? 'bg-red-100 text-red-600' : 'bg-amber-100 text-amber-800'}`}>
+                        {isLimitReached ? "Hết lượt miễn phí" : `Còn ${remaining} lượt`}
+                    </div>
+                )}
             </div>
 
             {/* Search Bar */}
             <div className="relative mb-8 z-20">
-                <div className={`bg-white rounded-3xl shadow-lg shadow-blue-50 border flex items-center relative z-20 ${isSeniorMode ? 'p-4 border-slate-300' : 'p-2 border-slate-200'}`}>
+                <div className={`bg-white rounded-3xl shadow-lg shadow-blue-50 border flex items-center relative z-20 ${isSeniorMode ? 'p-4 border-slate-300' : 'p-2 border-slate-200'} ${isLimitReached ? 'opacity-50 pointer-events-none' : ''}`}>
                     <input 
                         type="tel" 
                         placeholder="Nhập số điện thoại..." 
@@ -110,10 +138,11 @@ const LookupScreen: React.FC<LookupScreenProps> = ({ onBack }) => {
                         onFocus={() => setShowSuggestions(true)}
                         onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
                         onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+                        disabled={isLimitReached}
                     />
                     <button 
                         onClick={() => handleSearch()}
-                        disabled={isLoading || searchTerm.length < 3}
+                        disabled={isLoading || searchTerm.length < 3 || isLimitReached}
                         className={`bg-blue-600 hover:bg-blue-700 text-white rounded-2xl font-bold transition-all flex items-center gap-2 shadow-md active:scale-95 disabled:opacity-50 ${isSeniorMode ? 'px-8 py-4 text-xl' : 'px-6 py-3'}`}
                     >
                         {isLoading ? <Loader2 className="animate-spin" /> : <Search size={isSeniorMode ? 28 : 20} />}
@@ -121,11 +150,30 @@ const LookupScreen: React.FC<LookupScreenProps> = ({ onBack }) => {
                     </button>
                 </div>
 
-                {/* Suggestions Dropdown */}
-                {showSuggestions && searchTerm.length > 0 && (
+                {/* Limit Reached Banner */}
+                {isLimitReached && (
+                    <div className="absolute top-full left-0 right-0 mt-4 bg-slate-900 text-white rounded-2xl p-4 shadow-xl z-30 flex items-center justify-between animate-in slide-in-from-top-2">
+                        <div className="flex items-center gap-3">
+                            <div className="bg-white/20 p-2 rounded-full"><Lock size={20} /></div>
+                            <div>
+                                <div className="font-bold text-sm">Hết lượt tra cứu hôm nay</div>
+                                <div className="text-xs text-slate-300">Nâng cấp để tra cứu không giới hạn</div>
+                            </div>
+                        </div>
+                        <button 
+                            onClick={() => setShowPremiumModal(true)}
+                            className="bg-white text-slate-900 px-4 py-2 rounded-xl font-bold text-sm hover:bg-blue-50 transition-colors flex items-center gap-2"
+                        >
+                            <Crown size={14} className="text-yellow-500 fill-current" /> Nâng cấp
+                        </button>
+                    </div>
+                )}
+
+                {/* Suggestions Dropdown (using debounced term for filtering logic if needed) */}
+                {showSuggestions && debouncedSearchTerm.length > 0 && !isLimitReached && (
                     <div className="absolute top-full left-4 right-4 bg-white rounded-b-3xl shadow-xl border border-t-0 border-slate-200 -mt-4 pt-6 pb-2 px-2 z-10 animate-in fade-in slide-in-from-top-2">
                          <div className="text-xs font-bold text-slate-400 uppercase px-3 mb-2">Gợi ý tìm kiếm</div>
-                         {suggestedSearches.filter(s => s.includes(searchTerm)).map(s => (
+                         {suggestedSearches.filter(s => s.includes(debouncedSearchTerm)).map(s => (
                              <button 
                                 key={s} 
                                 onClick={() => handleSearch(s)}
@@ -266,12 +314,14 @@ const LookupScreen: React.FC<LookupScreenProps> = ({ onBack }) => {
                                 <UserCheck size={isSeniorMode ? 32 : 24} /> An toàn (Shipper...)
                             </button>
                         </div>
-                        <button onClick={() => setShowReportModal(false)} className={`w-full mt-4 text-slate-400 font-bold hover:text-slate-600 ${isSeniorMode ? 'py-5 text-lg' : 'py-3'}`}>
+                        <button onClick={() => setShowReportModal(false)} className={`w-full mt-4 text-slate-400 font-bold hover:text-slate-600 ${isSeniorMode ? 'py-4' : 'py-2'}`}>
                             Hủy bỏ
                         </button>
                     </div>
                 </div>
             )}
+            
+            {showPremiumModal && <PremiumUpgradeModal onClose={() => setShowPremiumModal(false)} triggerSource="lookup_limit" />}
         </div>
     );
 };

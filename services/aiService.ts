@@ -16,9 +16,15 @@ export const sanitizeInput = (input: string): string => {
   return input.replace(/<[^>]*>/g, "");
 };
 
-const timeoutPromise = (ms: number) => new Promise((_, reject) => {
-    setTimeout(() => reject(new Error("AI_TIMEOUT")), ms);
-});
+// FIX: Timeout helper that returns both the promise and a cancellation function
+const createTimeoutPromise = (ms: number): [Promise<never>, () => void] => {
+    let timeoutId: any;
+    const promise = new Promise<never>((_, reject) => {
+        timeoutId = setTimeout(() => reject(new Error("AI_TIMEOUT")), ms);
+    });
+    const clear = () => clearTimeout(timeoutId);
+    return [promise, clear];
+};
 
 // Helper to convert File/Blob to base64
 export const fileToBase64 = (file: Blob): Promise<string> => {
@@ -96,10 +102,9 @@ export const analyzeConversationContext = (text: string, isKnownContact: boolean
 };
 
 /**
- * NEW: Analyzes media (Image/Audio) for Deepfake indicators
- * Simulating logic from Hive AI, Intel FakeCatcher, and FaceForensics++
+ * NEW: Analyzes media (Image/Audio/Video) for Deepfake indicators
  */
-export const analyzeMediaDeepfake = async (file: File, type: 'image' | 'audio'): Promise<{
+export const analyzeMediaDeepfake = async (file: File, type: 'image' | 'audio' | 'video'): Promise<{
     isDeepfake: boolean;
     confidenceScore: number; // 0-100 (100 = definitely fake)
     indicators: string[];
@@ -112,6 +117,9 @@ export const analyzeMediaDeepfake = async (file: File, type: 'image' | 'audio'):
         faceForensicsMatch: number; // % match with known datasets
     }
 }> => {
+    // 30 seconds timeout for media analysis
+    const [timeoutProm, clearTimer] = createTimeoutPromise(30000);
+
     try {
         const ai = getAIClient();
         if (!ai) {
@@ -129,79 +137,58 @@ export const analyzeMediaDeepfake = async (file: File, type: 'image' | 'audio'):
                 Your task is to detect AI-generated/reconstructed faces that look "perfect" but lack real-world physics.
 
                 CRITICAL ANALYSIS INSTRUCTIONS (Forensic Level 2):
-                
-                1. **Hyper-Realism Trap**:
-                   - AI images often look "too perfect" (waxy skin, impossible lighting, cinematic glow everywhere). 
-                   - Real photos have noise, ISO grain, and imperfect skin texture.
-                   - If the skin looks like "rendered clay" or "plastic" despite having pores, MARK AS FAKE.
-
-                2. **Micro-Anatomy & Physics (The "Tell"):**
-                   - **Eyes**: Are pupils perfectly round? (Real pupils often aren't). Do reflections match the scene? (AI often puts generic studio lights in outdoor scenes).
-                   - **Hair**: Look for "floating strands" that dissolve into nothing or blend into the skin/clothes.
-                   - **Accessories**: Check earrings (mismatched?), glasses (frames melting into skin?), or background text (gibberish?).
-                
-                3. **Context Logic**:
-                   - Is the background bokeh natural? AI bokeh often smears objects illogically.
+                1. **Hyper-Realism Trap**: Check for waxy skin, impossible lighting, cinematic glow.
+                2. **Micro-Anatomy**: Check pupils (perfectly round?), hair (floating strands?), accessories (melting?).
+                3. **Context**: Is background bokeh natural?
                 
                 OUTPUT DECISION LOGIC:
-                - If it looks like a high-end 3D render or has "AI Glaze" (weirdly smooth/shiny): **DEEPFAKE**.
-                - If it has standard camera noise, natural imperfections, and consistent physics: **REAL**.
+                - If high-end 3D render look or "AI Glaze": **DEEPFAKE**.
+                - If standard camera noise, natural imperfections: **REAL**.
 
-                Return a JSON object:
-                {
-                    "isDeepfake": boolean,
-                    "confidenceScore": number (0-100. High-quality GenAI usually warrants 85-99 score),
-                    "indicators": ["string", "string"],
-                    "explanation": "concise technical summary in Vietnamese (e.g., 'Phát hiện da mặt có kết cấu sáp điển hình của AI', 'Ánh sáng trong mắt không khớp vật lý', 'Tóc bị lỗi render')",
-                    "details": {
-                        "biologicalScore": number (0-100. Low for AI because it lacks blood flow micro-changes),
-                        "visualArtifactsScore": number (0-100. High for AI due to generative patterns),
-                        "faceForensicsMatch": number (0-100),
-                        "integrityScore": number (0-100)
-                    }
-                }
+                Return JSON: { "isDeepfake": boolean, "confidenceScore": number (0-100), "indicators": string[], "explanation": string (Vietnamese), "details": { "biologicalScore": number, "visualArtifactsScore": number, "faceForensicsMatch": number, "integrityScore": number } }
+            `;
+        } else if (type === 'video') {
+            promptText = `
+                Act as a "Forensic Video Analyst". Analyze this video frame-by-frame for Deepfake anomalies (FaceSwap, Lip-sync, Reenactment).
+                
+                Analyze specifically for:
+                1. **Temporal Consistency**: Do facial features flicker or jitter between frames?
+                2. **Lip Sync**: Does the mouth movement match the speech perfectly, or is there a subtle "mushy" mouth effect?
+                3. **Blinking**: Is the blinking pattern natural or irregular?
+                4. **Boundary**: Look at the chin/neck line for blending artifacts.
+                
+                Return JSON: { "isDeepfake": boolean, "confidenceScore": number (0-100), "indicators": string[], "explanation": string (Vietnamese), "details": { "biologicalScore": number, "visualArtifactsScore": number, "faceForensicsMatch": number, "integrityScore": number } }
             `;
         } else {
              promptText = `
                 Act as a "Strict Forensic Audio Analyst". Analyze this audio for AI Voice Cloning / Deepfake Audio.
                 
                 Analyze specifically for:
-                1. **Spectral Continuity**: Are there unnatural gaps or "metallic" robotic artifacts in high frequencies?
-                2. **Breathing**: Does the speaker take natural breaths? AI voices are often "breathless" or have unnaturally spaced breaths.
-                3. **Intonation**: Is the emotion flat or inconsistent with the words?
+                1. **Spectral Continuity**: Unnatural gaps or "metallic" artifacts?
+                2. **Breathing**: Natural breaths?
+                3. **Intonation**: Flat emotion?
                 
-                Output Rules:
-                - If it sounds robotic or "too clean" (studio quality without background noise), lean towards FAKE.
-                
-                Return a JSON object:
-                {
-                    "isDeepfake": boolean,
-                    "confidenceScore": number (0-100),
-                    "indicators": ["string", "string"],
-                    "explanation": "concise technical summary in Vietnamese",
-                    "details": {
-                        "biologicalScore": 0,
-                        "visualArtifactsScore": 0,
-                        "faceForensicsMatch": 0,
-                        "audioSpectralScore": number (0-100, HIGH means ROBOTIC/FAKE artifacts found),
-                        "integrityScore": number (0-100)
-                    }
-                }
+                Return JSON: { "isDeepfake": boolean, "confidenceScore": number (0-100), "indicators": string[], "explanation": string (Vietnamese), "details": { "biologicalScore": 0, "visualArtifactsScore": 0, "faceForensicsMatch": 0, "audioSpectralScore": number, "integrityScore": number } }
             `;
         }
 
-        const response: any = await ai.models.generateContent({
-            model: "gemini-2.5-flash",
-            contents: {
-                parts: [
-                    { inlineData: { mimeType: mimeType, data: base64Data } },
-                    { text: promptText }
-                ]
-            },
-            config: {
-                responseMimeType: "application/json"
-            }
-        });
+        const response: any = await Promise.race([
+            ai.models.generateContent({
+                model: "gemini-2.5-flash",
+                contents: {
+                    parts: [
+                        { inlineData: { mimeType: mimeType, data: base64Data } },
+                        { text: promptText }
+                    ]
+                },
+                config: {
+                    responseMimeType: "application/json"
+                }
+            }),
+            timeoutProm
+        ]);
+
+        clearTimer();
 
         const jsonText = response.text || "{}";
         const result = JSON.parse(jsonText);
@@ -212,9 +199,9 @@ export const analyzeMediaDeepfake = async (file: File, type: 'image' | 'audio'):
             indicators: result.indicators ?? [],
             explanation: result.explanation ?? "Không tìm thấy dấu hiệu bất thường rõ rệt.",
             details: {
-                biologicalScore: result.details?.biologicalScore || 50, // Intel
-                visualArtifactsScore: result.details?.visualArtifactsScore || 0, // Hive
-                audioSpectralScore: result.details?.audioSpectralScore || 0, // Voice Detector
+                biologicalScore: result.details?.biologicalScore || 50,
+                visualArtifactsScore: result.details?.visualArtifactsScore || 0,
+                audioSpectralScore: result.details?.audioSpectralScore || 0,
                 integrityScore: result.details?.integrityScore || 100,
                 faceForensicsMatch: result.details?.faceForensicsMatch || 0
             }
@@ -222,13 +209,13 @@ export const analyzeMediaDeepfake = async (file: File, type: 'image' | 'audio'):
 
     } catch (error) {
         console.error("Deepfake Analysis Error:", error);
-        // Fallback for demo if API fails
+        clearTimer();
         return new Promise((resolve) => {
             setTimeout(() => {
                 resolve({
                     isDeepfake: false,
                     confidenceScore: 15,
-                    indicators: ["Chất lượng ảnh thấp", "Không đủ dữ liệu chi tiết"],
+                    indicators: ["Chất lượng thấp", "Không đủ dữ liệu chi tiết"],
                     explanation: "Không thể kết nối máy chủ phân tích chuyên sâu. Kết quả dựa trên kiểm tra sơ bộ.",
                     details: {
                         biologicalScore: 50,
@@ -255,6 +242,8 @@ export const analyzeMessageRisk = async (message: string): Promise<{
   const scamKeywords = /(chuyển tiền|cấp cứu|trúng thưởng|mật khẩu|otp|tài khoản ngân hàng|nâng cấp sim|khóa tài khoản)/i;
   const urgentKeywords = /(gấp|ngay lập tức|trong vòng 24h|khẩn cấp)/i;
 
+  const [timeoutProm, clearTimer] = createTimeoutPromise(8000);
+
   try {
     const ai = getAIClient();
     
@@ -278,8 +267,10 @@ export const analyzeMessageRisk = async (message: string): Promise<{
             model: "gemini-2.5-flash",
             contents: [{ role: "user", parts: [{ text: prompt }] }]
         }),
-        timeoutPromise(8000) 
+        timeoutProm 
     ]);
+    
+    clearTimer();
 
     const text = response.text || "";
     const [classification, explanation] = text.split('|');
@@ -291,6 +282,7 @@ export const analyzeMessageRisk = async (message: string): Promise<{
     return { result, explanation: explanation?.trim() || "Cần cảnh giác." };
 
   } catch (error: any) {
+    clearTimer();
     if (scamKeywords.test(cleanInput) || urgentKeywords.test(cleanInput)) {
         return { 
             result: 'suspicious', 

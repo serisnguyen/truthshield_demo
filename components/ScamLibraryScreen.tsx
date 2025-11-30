@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { BookOpen, ShieldAlert, Zap, Banknote, Heart, RefreshCw, AlertTriangle, Volume2, StopCircle, PlayCircle, XCircle } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
@@ -59,29 +59,29 @@ const ScamLibraryScreen: React.FC<ScamLibraryScreenProps> = ({ onOpenTutorial })
   const [speakingId, setSpeakingId] = useState<number | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([]);
+  
+  // Reference to current utterance to prevent GC and handle cancellation
+  const utteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
 
   // Improved Voice Loading Logic
   useEffect(() => {
     const loadVoices = () => {
       const availableVoices = window.speechSynthesis.getVoices();
       setVoices(availableVoices);
-      
-      // Debug: Log voices
-      // const vnVoices = availableVoices.filter(v => v.lang.includes('vi'));
-      // console.log("Vietnamese Voices found:", vnVoices.map(v => v.name));
     };
 
     loadVoices();
     
-    // Chrome/Edge loads asynchronously
     if (window.speechSynthesis.onvoiceschanged !== undefined) {
       window.speechSynthesis.onvoiceschanged = loadVoices;
     }
     
+    // Cleanup function to cancel any ongoing speech when component unmounts
     return () => {
       if ('speechSynthesis' in window) {
         window.speechSynthesis.cancel();
       }
+      utteranceRef.current = null;
     };
   }, []);
 
@@ -113,17 +113,18 @@ const ScamLibraryScreen: React.FC<ScamLibraryScreenProps> = ({ onOpenTutorial })
     // Toggle logic
     if (speakingId === scam.id) {
       synth.cancel();
+      if (utteranceRef.current) utteranceRef.current = null;
       setSpeakingId(null);
       return;
     }
 
     synth.cancel();
+    if (utteranceRef.current) utteranceRef.current = null;
     
     const text = `Cảnh báo lừa đảo dạng ${scam.type}. ${scam.title}. ${scam.description}`;
     const utterance = new SpeechSynthesisUtterance(text);
     
     // Robust Voice Selection
-    // Priority: 1. vi-VN, 2. startsWith('vi'), 3. includes 'Viet', 4. Google's Vietnamese
     let availableVoices = voices.length > 0 ? voices : synth.getVoices();
     
     const vnVoice = 
@@ -137,18 +138,21 @@ const ScamLibraryScreen: React.FC<ScamLibraryScreenProps> = ({ onOpenTutorial })
         utterance.voice = vnVoice;
         utterance.lang = vnVoice.lang;
     } else {
-        // Fallback: force lang code and hope for best
         utterance.lang = 'vi-VN';
     }
     
-    utterance.rate = isSeniorMode ? 0.85 : 0.95; // Slightly slower for seniors
+    utterance.rate = isSeniorMode ? 0.85 : 0.95;
     utterance.pitch = 1.0;
     
     utterance.onstart = () => setSpeakingId(scam.id);
-    utterance.onend = () => setSpeakingId(null);
+    utterance.onend = () => {
+        setSpeakingId(null);
+        utteranceRef.current = null;
+    };
     
     utterance.onerror = (event) => {
         setSpeakingId(null);
+        utteranceRef.current = null;
         if (event.error !== 'interrupted' && event.error !== 'canceled') {
             let msg = "Không thể phát âm thanh.";
             if (event.error === 'network') msg = "Lỗi mạng khi tải giọng đọc.";
@@ -158,6 +162,8 @@ const ScamLibraryScreen: React.FC<ScamLibraryScreenProps> = ({ onOpenTutorial })
         }
     };
     
+    // FIX: Keep a reference to prevent Garbage Collection
+    utteranceRef.current = utterance;
     synth.speak(utterance);
   };
 
@@ -187,7 +193,7 @@ const ScamLibraryScreen: React.FC<ScamLibraryScreenProps> = ({ onOpenTutorial })
         <div>
           <h2 className={`${isSeniorMode ? 'text-3xl md:text-4xl' : 'text-3xl'} font-black text-slate-900 mb-2 flex items-center gap-2`}>
             <BookOpen size={isSeniorMode ? 48 : 32} className="text-blue-600" /> 
-            {isSeniorMode ? 'CÁC CHIÊU LỪA ĐẢO' : 'Thư Viện Cảnh Báo'}
+            {isSeniorMode ? 'THƯ VIỆN CẢNH BÁO' : 'Thư Viện Cảnh Báo'}
           </h2>
           <p className={`${isSeniorMode ? 'text-lg md:text-xl font-medium' : 'text-base'} text-slate-500`}>
             {isSeniorMode ? 'Danh sách các thủ đoạn kẻ xấu hay dùng. Bác bấm vào để nghe.' : 'Hệ thống AI tổng hợp các thủ đoạn lừa đảo phổ biến và mới nhất.'}

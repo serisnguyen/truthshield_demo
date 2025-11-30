@@ -98,6 +98,12 @@ const FamilyScreen: React.FC = () => {
     }
   };
 
+  const handleRemoveContact = (id: string, name: string) => {
+      if (window.confirm(`Bạn có chắc chắn muốn xóa "${name}" khỏi danh sách SOS không?`)) {
+          removeEmergencyContact(id);
+      }
+  };
+
   const formatCode = (code: string) => code ? code.match(/.{1,3}/g)?.join(' ') || code : "...";
   const formatTime = (seconds: number) => `${Math.floor(seconds / 60)}:${(seconds % 60).toString().padStart(2, '0')}`;
 
@@ -247,7 +253,13 @@ const FamilyScreen: React.FC = () => {
                                  <div className={`text-slate-500 ${isSeniorMode ? 'text-base' : 'text-sm'}`}>{c.phone}</div>
                              </div>
                          </div>
-                         <button onClick={() => removeEmergencyContact(c.id)} className="text-slate-400 hover:text-red-500"><Trash2 size={isSeniorMode ? 24 : 18}/></button>
+                         <button 
+                            onClick={() => handleRemoveContact(c.id, c.name)} 
+                            className="text-slate-400 hover:text-red-500 p-2"
+                            aria-label={`Xóa liên hệ ${c.name}`}
+                        >
+                            <Trash2 size={isSeniorMode ? 24 : 18}/>
+                        </button>
                      </div>
                  ))}
                  {(!user?.emergencyContacts || user.emergencyContacts.length === 0) && (

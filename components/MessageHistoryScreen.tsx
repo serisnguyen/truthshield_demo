@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { ArrowLeft, MessageSquareText, ShieldCheck, ShieldAlert, AlertTriangle, Trash2, Clock, CheckCircle2, Search, ChevronDown, ChevronUp, Sparkles, Loader2 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
@@ -68,6 +69,12 @@ const MessageHistoryScreen: React.FC<MessageHistoryScreenProps> = ({ onBack }) =
     setIsScanning(false);
   };
 
+  const handleClearHistory = () => {
+    if (confirm("CẢNH BÁO: Bạn có chắc chắn muốn xóa toàn bộ lịch sử tin nhắn? Hành động này không thể hoàn tác.")) {
+        clearMessageHistory();
+    }
+  };
+
   return (
     <div className={`p-4 md:p-6 pt-20 md:pt-10 pb-32 min-h-screen max-w-2xl mx-auto animate-in fade-in duration-300 ${isSeniorMode ? 'text-lg' : ''}`}>
         
@@ -77,6 +84,7 @@ const MessageHistoryScreen: React.FC<MessageHistoryScreenProps> = ({ onBack }) =
                 <button 
                     onClick={onBack}
                     className="p-2 hover:bg-slate-100 rounded-full transition-colors"
+                    aria-label="Quay lại"
                 >
                     <ArrowLeft size={isSeniorMode ? 32 : 24} className="text-slate-700" />
                 </button>
@@ -91,6 +99,7 @@ const MessageHistoryScreen: React.FC<MessageHistoryScreenProps> = ({ onBack }) =
                     onClick={handleReScan}
                     disabled={isScanning || !user?.messageHistory?.length}
                     className={`flex items-center justify-center gap-2 bg-purple-600 hover:bg-purple-700 text-white rounded-xl font-bold shadow-md active:scale-95 transition-all disabled:opacity-50 ${isSeniorMode ? 'px-6 py-3 text-lg' : 'px-4 py-2 text-sm'}`}
+                    aria-label="Quét lại rủi ro bằng AI"
                 >
                     {isScanning ? <Loader2 size={20} className="animate-spin" /> : <Sparkles size={20} />}
                     {isScanning ? 'Đang quét...' : 'Quét Rủi Ro AI'}
@@ -98,13 +107,10 @@ const MessageHistoryScreen: React.FC<MessageHistoryScreenProps> = ({ onBack }) =
 
                 {user?.messageHistory && user.messageHistory.length > 0 && (
                     <button 
-                        onClick={() => {
-                            if (confirm("Bạn có chắc muốn xóa toàn bộ lịch sử tin nhắn?")) {
-                                clearMessageHistory();
-                            }
-                        }}
+                        onClick={handleClearHistory}
                         className="p-3 text-red-500 hover:bg-red-50 rounded-full transition-colors flex flex-col items-center"
                         title="Xóa lịch sử"
+                        aria-label="Xóa toàn bộ lịch sử tin nhắn"
                     >
                         <Trash2 size={isSeniorMode ? 28 : 20} />
                     </button>
@@ -114,7 +120,7 @@ const MessageHistoryScreen: React.FC<MessageHistoryScreenProps> = ({ onBack }) =
 
         {/* Stats */}
         {user?.messageHistory && user.messageHistory.length > 0 && (
-             <div className="grid grid-cols-3 gap-3 mb-6">
+             <div className="grid grid-cols-3 gap-3 mb-6" role="status" aria-label="Thống kê trạng thái tin nhắn">
                  <div className="bg-green-50 rounded-xl p-3 border border-green-100 text-center">
                      <span className="block text-2xl font-black text-green-600">
                          {user.messageHistory.filter(m => m.result === 'safe').length}
@@ -144,6 +150,14 @@ const MessageHistoryScreen: React.FC<MessageHistoryScreenProps> = ({ onBack }) =
                         key={msg.id} 
                         onClick={() => toggleExpand(msg.id)}
                         className={`bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden transition-all ${isSeniorMode ? 'p-5' : 'p-4'} ${isScanning ? 'opacity-50' : ''}`}
+                        role="button"
+                        aria-expanded={expandedId === msg.id}
+                        tabIndex={0}
+                        onKeyDown={(e) => {
+                            if (e.key === 'Enter' || e.key === ' ') {
+                                toggleExpand(msg.id);
+                            }
+                        }}
                     >
                         <div className="flex justify-between items-start gap-3">
                             <div className={`flex-shrink-0 w-12 h-12 rounded-xl flex items-center justify-center ${
@@ -198,6 +212,7 @@ const MessageHistoryScreen: React.FC<MessageHistoryScreenProps> = ({ onBack }) =
                                             alert("Đã sao chép nội dung!");
                                         }}
                                         className="w-full bg-white border border-slate-200 py-3 rounded-lg text-sm font-bold text-slate-600 shadow-sm hover:bg-slate-50"
+                                        aria-label="Sao chép nội dung tin nhắn"
                                      >
                                          Sao chép nội dung
                                      </button>
