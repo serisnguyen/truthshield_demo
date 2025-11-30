@@ -2,9 +2,8 @@
 import React, { useState, Suspense, lazy } from 'react';
 import { 
   Shield, MessageSquareText, 
-  Bot, BookOpen, UserCircle, BellRing, Search, ScanFace, Grip, Sparkles
+  Bot, BookOpen, UserCircle, Search, ScanFace, Grip, Sparkles
 } from 'lucide-react';
-import AlertOverlay from './components/AlertOverlay';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import ErrorBoundary from './components/ErrorBoundary';
 import OnboardingFlow from './components/OnboardingFlow';
@@ -12,7 +11,7 @@ import CallOverlay from './components/CallOverlay';
 
 // Lazy Load Components
 const HomeScreen = lazy(() => import('./components/HomeScreen'));
-const MessageGuard = lazy(() => import('./components/MessageGuard')); // Reused as main message app
+const MessageGuard = lazy(() => import('./components/MessageGuard')); 
 const ChatScreen = lazy(() => import('./components/ChatScreen'));
 const ProfileScreen = lazy(() => import('./components/ProfileScreen'));
 const ScamLibraryScreen = lazy(() => import('./components/ScamLibraryScreen'));
@@ -37,7 +36,6 @@ const LoadingFallback = () => (
 const AppContent: React.FC = () => {
   const { user, isLoading, isOnboarding, incomingCall, isSeniorMode } = useAuth();
   const [activeTab, setActiveTab] = useState<Tab>('home');
-  const [showAlert, setShowAlert] = useState(false);
 
   // If loading
   if (isLoading) return <LoadingFallback />;
@@ -65,7 +63,7 @@ const AppContent: React.FC = () => {
     <div className={`min-h-screen font-sans flex flex-col h-screen overflow-hidden ${isSeniorMode ? 'text-lg' : ''}`}>
       
       {/* --- Desktop Sidebar (Glassmorphism) --- */}
-      <aside className="hidden md:flex w-80 flex-col glass-panel z-30 fixed h-[96%] top-[2%] left-4 rounded-[32px] overflow-hidden border border-white/40 shadow-2xl">
+      <aside className="hidden lg:flex w-80 flex-col glass-panel z-30 fixed h-[96%] top-[2%] left-4 rounded-[32px] overflow-hidden border border-white/40 shadow-2xl">
         <div className="h-24 flex items-center px-8 bg-gradient-to-b from-white/40 to-transparent">
           <div className="relative">
             <div className="bg-gradient-to-br from-blue-600 to-indigo-600 p-2.5 rounded-2xl shadow-lg shadow-blue-500/30">
@@ -114,10 +112,11 @@ const AppContent: React.FC = () => {
       </aside>
 
       {/* --- Main Content --- */}
-      <main className="flex-1 md:pl-[340px] flex flex-col h-full relative">
-        {/* Mobile Header (Floating Glass) */}
-        <div className={`md:hidden absolute top-0 left-0 right-0 px-4 pt-4 z-20`}>
-           <div className={`glass-panel rounded-2xl flex items-center justify-between px-4 shadow-xl shadow-slate-200/50 ${isSeniorMode ? 'h-20' : 'h-16'}`}>
+      <main className="flex-1 lg:pl-[340px] flex flex-col h-full relative">
+        
+        {/* Mobile/Tablet Header (Sticky Glass) */}
+        <div className={`lg:hidden sticky top-0 left-0 right-0 px-4 pt-2 z-40 pointer-events-none`}>
+           <div className={`glass-panel rounded-2xl flex items-center justify-between px-4 shadow-sm pointer-events-auto ${isSeniorMode ? 'h-20' : 'h-16'}`}>
                 <div className="flex items-center gap-3">
                     <div className={`bg-gradient-to-br from-blue-600 to-indigo-600 rounded-xl shadow-lg shadow-blue-500/20 ${isSeniorMode ? 'p-2.5' : 'p-2'}`}>
                         <Shield className={`${isSeniorMode ? 'w-6 h-6' : 'w-5 h-5'} text-white fill-current`} />
@@ -127,22 +126,21 @@ const AppContent: React.FC = () => {
                         {!isSeniorMode && <span className="text-[10px] text-blue-600 font-bold uppercase tracking-widest">AI Protection</span>}
                     </div>
                 </div>
-                <button onClick={() => setShowAlert(true)} className="p-2.5 text-slate-600 bg-white/80 rounded-full hover:bg-white transition-colors relative shadow-sm border border-slate-100">
-                    <BellRing size={isSeniorMode ? 24 : 20} />
-                    <span className="absolute top-2 right-2.5 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-white"></span>
-                </button>
+                
+                {/* Bell Icon Removed as requested */}
            </div>
         </div>
 
-        <div className="flex-1 overflow-y-auto pb-40 md:pb-0 scroll-smooth custom-scrollbar">
+        {/* Content Scroll Area */}
+        <div className="flex-1 overflow-y-auto pb-32 lg:pb-0 scroll-smooth custom-scrollbar">
           <Suspense fallback={<LoadingFallback />}>
             {renderContent()}
           </Suspense>
         </div>
 
-        {/* Mobile Dock (Floating Island) */}
-        <div className="md:hidden fixed bottom-6 left-4 right-4 z-30 pointer-events-none">
-          <div className={`glass-panel bg-white/95 shadow-[0_8px_30px_rgb(0,0,0,0.12)] border border-white/50 rounded-[32px] px-2 pointer-events-auto flex justify-around items-center max-w-sm mx-auto relative ${isSeniorMode ? 'py-4' : 'py-3'}`}>
+        {/* Mobile/Tablet Dock (Floating Island) */}
+        <div className="lg:hidden fixed bottom-6 left-4 right-4 z-30 pointer-events-none">
+          <div className={`glass-panel bg-white/95 shadow-[0_8px_30px_rgb(0,0,0,0.12)] border border-white/50 rounded-[32px] px-2 pointer-events-auto flex justify-around items-center max-w-md mx-auto relative ${isSeniorMode ? 'py-4' : 'py-3'}`}>
             <NavButton icon={<MessageSquareText size={isSeniorMode ? 28 : 24} />} label="Quét SMS" isActive={activeTab === 'messagescan'} onClick={() => setActiveTab('messagescan')} />
             <NavButton icon={<Search size={isSeniorMode ? 28 : 24} />} label="Tra Cứu" isActive={activeTab === 'lookup'} onClick={() => setActiveTab('lookup')} />
             
@@ -150,6 +148,7 @@ const AppContent: React.FC = () => {
                 <button 
                     onClick={() => setActiveTab('home')}
                     className={`bg-gradient-to-b from-blue-600 to-indigo-600 rounded-3xl flex items-center justify-center text-white shadow-xl shadow-blue-500/40 active:scale-95 transition-transform border-[6px] border-[#F0F4F8] relative group ${isSeniorMode ? 'w-20 h-20' : 'w-18 h-18 p-4'}`}
+                    aria-label="Trang chủ"
                 >
                     <div className="absolute inset-0 bg-white/20 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity"></div>
                     <Shield size={isSeniorMode ? 36 : 28} fill="currentColor" />
@@ -163,7 +162,6 @@ const AppContent: React.FC = () => {
       </main>
 
       {/* Global Overlays */}
-      {showAlert && <AlertOverlay onClose={() => setShowAlert(false)} />}
       {incomingCall && <CallOverlay call={incomingCall} />}
     </div>
   );

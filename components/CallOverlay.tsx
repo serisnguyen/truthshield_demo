@@ -50,8 +50,8 @@ const CallOverlay: React.FC<CallOverlayProps> = ({ call }) => {
     // Initialize Warning Sound
     useEffect(() => {
         audioRef.current = new Audio('https://actions.google.com/sounds/v1/alarms/spaceship_alarm.ogg');
-        audioRef.current.loop = false;
-        audioRef.current.volume = 0.5;
+        audioRef.current.loop = true; // Loop enabled for continuous warning
+        audioRef.current.volume = 0.8; // Increased volume
 
         return () => {
             // Cleanup: Stop audio when component unmounts
@@ -87,7 +87,10 @@ const CallOverlay: React.FC<CallOverlayProps> = ({ call }) => {
 
     useEffect(() => {
         if (!isLoadingData && isRisky && !warningPlayed && status === 'ringing') {
-            audioRef.current?.play().catch(e => console.log("Audio policy:", e));
+            const playPromise = audioRef.current?.play();
+            if (playPromise !== undefined) {
+                playPromise.catch(e => console.log("Audio policy:", e));
+            }
             setWarningPlayed(true);
             
             // Auto Hangup Logic
@@ -98,16 +101,25 @@ const CallOverlay: React.FC<CallOverlayProps> = ({ call }) => {
     }, [isLoadingData, isRisky, warningPlayed, status, AUTO_HANGUP, communityInfo]);
 
 
+    const stopAudioImmediate = () => {
+        if (audioRef.current) {
+            audioRef.current.pause();
+            audioRef.current.currentTime = 0;
+        }
+    };
+
     const handleAnswer = () => {
         if (isProcessing) return;
         setIsProcessing(true);
+        stopAudioImmediate();
         setStatus('connected');
-        setIsProcessing(false); // Allow further actions (like hanging up)
+        setIsProcessing(false); 
     };
     
     const handleReject = (auto: boolean = false) => {
         if (isProcessing) return;
         setIsProcessing(true);
+        stopAudioImmediate();
 
         if (auto) setStatus('auto_ended');
         else setStatus('ended');
@@ -122,6 +134,7 @@ const CallOverlay: React.FC<CallOverlayProps> = ({ call }) => {
     const handleBlock = () => {
         if (isProcessing) return;
         setIsProcessing(true);
+        stopAudioImmediate();
 
         blockNumber(call.phoneNumber);
         setStatus('blocked');
@@ -146,7 +159,7 @@ const CallOverlay: React.FC<CallOverlayProps> = ({ call }) => {
         }`}>
             {/* Close Button */}
             <button 
-                onClick={() => setIncomingCall(null)}
+                onClick={() => { stopAudioImmediate(); setIncomingCall(null); }}
                 className="absolute top-4 right-4 p-3 bg-black/20 text-white rounded-full hover:bg-black/40 backdrop-blur-md z-50 transition-colors active:scale-95"
                 aria-label="Đóng màn hình cuộc gọi"
             >
