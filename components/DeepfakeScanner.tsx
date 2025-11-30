@@ -162,7 +162,7 @@ const DeepfakeScanner: React.FC = () => {
   };
 
   // Remaining scans for UI
-  const remaining = user?.plan === 'premium' ? 999 : Math.max(0, LIMITS.FREE.DEEPFAKE_SCANS - (user?.usage?.deepfakeScans || 0));
+  const remaining = user?.plan !== 'free' ? 999 : Math.max(0, LIMITS.FREE.DEEPFAKE_SCANS - (user?.usage?.deepfakeScans || 0));
   const isLimitReached = user?.plan === 'free' && remaining === 0;
 
   return (

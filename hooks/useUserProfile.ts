@@ -1,11 +1,10 @@
 
 import { 
   User, 
-  EmergencyContact, 
-  AlertHistoryItem, 
-  MessageAnalysisLog, 
-  CallLogItem,
-  ContactItem
+  ContactItem,
+  AlertHistoryItem,
+  MessageAnalysisLog,
+  CallLogItem
 } from '../types';
 
 interface UseUserProfileProps {
@@ -15,13 +14,12 @@ interface UseUserProfileProps {
 
 export const useUserProfile = ({ user, persistUser }: UseUserProfileProps) => {
 
-  const addContact = (contact: Omit<ContactItem, 'id' | 'isAppUser'>) => {
+  const addContact = (contact: Omit<ContactItem, 'id'>) => {
     if (user) {
       const newContact: ContactItem = {
         id: Date.now().toString(),
         name: contact.name,
-        phone: contact.phone,
-        isAppUser: false,
+        phone: contact.phone
       };
       // Ensure contacts array exists
       const currentContacts = user.contacts || [];
@@ -30,41 +28,21 @@ export const useUserProfile = ({ user, persistUser }: UseUserProfileProps) => {
     }
   };
 
-  const addEmergencyContact = (contact: Omit<EmergencyContact, 'id'>) => {
-    if (user) {
-      const newContact = { ...contact, id: Date.now().toString() };
-      const updatedUser = { ...user, emergencyContacts: [...user.emergencyContacts, newContact] };
-      persistUser(updatedUser);
-    }
-  };
-
-  const removeEmergencyContact = (id: string) => {
-    if (user) {
-      const updatedUser = { 
-        ...user, 
-        emergencyContacts: user.emergencyContacts.filter(c => c.id !== id) 
-      };
-      persistUser(updatedUser);
-    }
-  };
-
   const addAlertToHistory = (alert: Omit<AlertHistoryItem, 'id' | 'timestamp'>) => {
     if (user) {
-      const newAlert: AlertHistoryItem = { 
-        ...alert, 
-        id: Date.now().toString(), 
-        timestamp: Date.now() 
+      const newAlert: AlertHistoryItem = {
+        ...alert,
+        id: Date.now().toString(),
+        timestamp: Date.now()
       };
-      const newHistory = [newAlert, ...user.alertHistory].slice(0, 50);
-      const updatedUser = { ...user, alertHistory: newHistory };
+      const updatedUser = { ...user, alertHistory: [newAlert, ...(user.alertHistory || [])] };
       persistUser(updatedUser);
     }
   };
 
   const clearAlertHistory = () => {
     if (user) {
-      const updatedUser = { ...user, alertHistory: [] };
-      persistUser(updatedUser);
+      persistUser({ ...user, alertHistory: [] });
     }
   };
 
@@ -75,102 +53,65 @@ export const useUserProfile = ({ user, persistUser }: UseUserProfileProps) => {
         id: Date.now().toString(),
         timestamp: Date.now()
       };
-      const newHistory = [newLog, ...(user.messageHistory || [])].slice(0, 20);
-      const updatedUser = { ...user, messageHistory: newHistory };
+      const updatedUser = { ...user, messageHistory: [newLog, ...(user.messageHistory || [])] };
       persistUser(updatedUser);
     }
   };
 
   const clearMessageHistory = () => {
     if (user) {
-      const updatedUser = { ...user, messageHistory: [] };
-      persistUser(updatedUser);
+      persistUser({ ...user, messageHistory: [] });
     }
   };
-  
+
   const updateMessageHistoryItem = (id: string, result: 'safe' | 'suspicious' | 'scam', explanation: string) => {
-      if (user) {
-          const updatedHistory = user.messageHistory.map(msg => 
-            msg.id === id ? { ...msg, result, explanation, timestamp: Date.now() } : msg
-          );
-          const updatedUser = { ...user, messageHistory: updatedHistory };
-          persistUser(updatedUser);
-      }
-  };
-
-  const updateSecurityQuestions = (questions: string[]) => {
     if (user) {
-        const updatedUser = { ...user, securityQuestions: questions };
-        persistUser(updatedUser);
-    }
-  };
-
-  const updateSOSMessage = (message: string) => {
-    if (user) {
-        const updatedUser = { ...user, sosMessage: message };
-        persistUser(updatedUser);
+      const updatedHistory = (user.messageHistory || []).map(item => 
+        item.id === id ? { ...item, result, explanation } : item
+      );
+      persistUser({ ...user, messageHistory: updatedHistory });
     }
   };
 
   const updateCallHistoryItem = (callId: string, updates: Partial<CallLogItem>) => {
     if (user) {
-        const updatedHistory = user.callHistory.map(call => 
-            call.id === callId ? { ...call, ...updates } : call
-        );
-        const updatedUser = { ...user, callHistory: updatedHistory };
-        persistUser(updatedUser);
+      const updatedHistory = (user.callHistory || []).map(call => 
+        call.id === callId ? { ...call, ...updates } : call
+      );
+      persistUser({ ...user, callHistory: updatedHistory });
     }
   };
 
-  const regenerateFamilyId = (generateCode: () => string) => {
-    if (user) {
-        const updated = { 
-            ...user, 
-            familyId: generateCode(),
-            familyCodeTimestamp: Date.now()
-        };
-        persistUser(updated);
-    }
-  };
-  
   const updateSettings = (settings: Partial<User>) => {
-      if (user) {
-          const updatedUser = { ...user, ...settings };
-          persistUser(updatedUser);
-      }
+    if (user) {
+      persistUser({ ...user, ...settings });
+    }
   };
 
   const blockNumber = (phone: string) => {
     if (user) {
-      // Prevent duplicates
-      if (user.blockedNumbers?.includes(phone)) return;
-      const updatedBlocked = [...(user.blockedNumbers || []), phone];
-      const updatedUser = { ...user, blockedNumbers: updatedBlocked };
-      persistUser(updatedUser);
+      const currentBlocked = user.blockedNumbers || [];
+      if (!currentBlocked.includes(phone)) {
+        persistUser({ ...user, blockedNumbers: [...currentBlocked, phone] });
+      }
     }
   };
 
   const unblockNumber = (phone: string) => {
     if (user) {
-      const updatedBlocked = (user.blockedNumbers || []).filter(p => p !== phone);
-      const updatedUser = { ...user, blockedNumbers: updatedBlocked };
-      persistUser(updatedUser);
+      const currentBlocked = user.blockedNumbers || [];
+      persistUser({ ...user, blockedNumbers: currentBlocked.filter(p => p !== phone) });
     }
   };
 
-  return {
+  return { 
     addContact,
-    addEmergencyContact,
-    removeEmergencyContact,
     addAlertToHistory,
     clearAlertHistory,
     addMessageAnalysis,
     clearMessageHistory,
     updateMessageHistoryItem,
-    updateSecurityQuestions,
-    updateSOSMessage,
     updateCallHistoryItem,
-    regenerateFamilyId,
     updateSettings,
     blockNumber,
     unblockNumber

@@ -39,7 +39,7 @@ const ProfileScreen: React.FC = () => {
                     {isFree ? 'Thành viên Free' : (
                         <>
                             <Crown size={12} fill="currentColor"/> 
-                            {user.plan === 'family' ? 'Gói Gia Đình' : 'Premium Member'}
+                            Premium Member
                         </>
                     )}
                 </div>

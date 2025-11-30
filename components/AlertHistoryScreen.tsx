@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { ArrowLeft, AlertTriangle, ShieldAlert, MessageSquareWarning, LocateFixed, Trash2, Clock } from 'lucide-react';
+import { ArrowLeft, AlertTriangle, ShieldAlert, MessageSquareWarning, Trash2, Clock } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
 interface AlertHistoryScreenProps {
@@ -17,8 +17,6 @@ const AlertHistoryScreen: React.FC<AlertHistoryScreenProps> = ({ onBack }) => {
         return <ShieldAlert size={size} className="text-red-600" />;
       case 'scam_msg':
         return <MessageSquareWarning size={size} className="text-amber-600" />;
-      case 'sos':
-        return <LocateFixed size={size} className="text-blue-600" />;
       default:
         return <AlertTriangle size={size} className="text-slate-500" />;
     }
@@ -87,7 +85,7 @@ const AlertHistoryScreen: React.FC<AlertHistoryScreenProps> = ({ onBack }) => {
                                 <h3 className={`font-bold text-slate-800 uppercase ${isSeniorMode ? 'text-xl' : 'text-base'}`}>
                                     {alert.type === 'deepfake' ? 'Cảnh Báo Deepfake' :
                                      alert.type === 'scam_msg' ? 'Tin Nhắn Rác' :
-                                     'Tín Hiệu SOS'}
+                                     'Cảnh Báo Cộng Đồng'}
                                 </h3>
                                 <span className={`text-slate-400 flex items-center gap-1 bg-slate-50 px-2 py-1 rounded ${isSeniorMode ? 'text-sm' : 'text-xs'}`}>
                                     <Clock size={isSeniorMode ? 14 : 10} />

@@ -60,7 +60,6 @@ const AppContent: React.FC = () => {
   };
 
   // Safe Area Height Calculation for iPhone 16 Pro Header Consistency
-  // 16 Pro has a larger "Dynamic Island" area, so we increase the base height substantially.
   const headerHeightClass = isSeniorMode ? 'h-[5.5rem]' : 'h-[5rem]'; 
   const headerPaddingClass = isSeniorMode ? 'pt-[calc(5.5rem+env(safe-area-inset-top))]' : 'pt-[calc(5rem+env(safe-area-inset-top))]';
 
@@ -134,8 +133,8 @@ const AppContent: React.FC = () => {
         <div className="lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-white/85 backdrop-blur-2xl border-t border-slate-200/50 pb-[env(safe-area-inset-bottom)] pt-3 px-4 shadow-[0_-10px_40px_rgba(0,0,0,0.03)]">
           <div className="flex justify-between items-center h-[3.5rem] px-2">
             <NavTab icon={<Home size={26} />} label="Trang chủ" isActive={activeTab === 'home'} onClick={() => setActiveTab('home')} />
-            <NavTab icon={<MessageSquareText size={26} />} label="Tin nhắn" isActive={activeTab === 'messagescan'} onClick={() => setActiveTab('messagescan')} />
-            
+            <NavTab icon={<Search size={26} />} label="Tra cứu" isActive={activeTab === 'lookup'} onClick={() => setActiveTab('lookup')} />
+
             {/* Center Main Action - Slightly Floating & Larger */}
             <div className="relative -top-8 mx-2">
                  <button 
@@ -146,7 +145,7 @@ const AppContent: React.FC = () => {
                 </button>
             </div>
             
-            <NavTab icon={<Search size={26} />} label="Tra cứu" isActive={activeTab === 'lookup'} onClick={() => setActiveTab('lookup')} />
+            <NavTab icon={<MessageSquareText size={26} />} label="Tin nhắn" isActive={activeTab === 'messagescan'} onClick={() => setActiveTab('messagescan')} />
             <NavTab icon={<BookOpen size={26} />} label="Thư viện" isActive={activeTab === 'library'} onClick={() => setActiveTab('library')} />
           </div>
         </div>

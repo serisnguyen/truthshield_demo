@@ -83,7 +83,7 @@ const MessageGuard: React.FC = () => {
       }
   };
 
-  const remaining = user?.plan === 'premium' ? 999 : Math.max(0, LIMITS.FREE.MESSAGE_SCANS - (user?.usage?.messageScans || 0));
+  const remaining = user?.plan !== 'free' ? 999 : Math.max(0, LIMITS.FREE.MESSAGE_SCANS - (user?.usage?.messageScans || 0));
   const isLimitReached = user?.plan === 'free' && remaining === 0;
 
   return (

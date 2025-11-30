@@ -99,7 +99,7 @@ const LookupScreen: React.FC<LookupScreenProps> = ({ onBack }) => {
         }
     };
 
-    const remaining = user?.plan === 'premium' ? 999 : Math.max(0, LIMITS.FREE.CALL_LOOKUPS - (user?.usage?.callLookups || 0));
+    const remaining = user?.plan !== 'free' ? 999 : Math.max(0, LIMITS.FREE.CALL_LOOKUPS - (user?.usage?.callLookups || 0));
     const isLimitReached = user?.plan === 'free' && remaining === 0;
 
     return (

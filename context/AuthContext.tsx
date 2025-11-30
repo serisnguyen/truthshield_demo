@@ -2,7 +2,6 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import { 
   User, 
-  EmergencyContact, 
   AlertHistoryItem, 
   MessageAnalysisLog, 
   CallLogItem,
@@ -84,19 +83,14 @@ interface AuthContextType {
   lookupPhoneNumber: (phone: string) => Promise<PhoneLookupResult | null>;
   reportPhoneNumber: (phone: string, type: 'scam' | 'spam' | 'safe', label: string) => Promise<void>;
   toggleSeniorMode: () => void;
-  upgradeSubscription: (plan?: SubscriptionPlan) => void;
+  upgradeSubscription: (plan: SubscriptionPlan) => void;
   
   // Usage Checks
   checkLimit: (feature: 'deepfake' | 'message' | 'lookup') => boolean;
   incrementUsage: (feature: 'deepfake' | 'message' | 'lookup') => void;
 
-  role: 'elder' | 'user';
-  incomingSOS: boolean;
-  setIncomingSOS: (value: boolean) => void;
-  addEmergencyContact: (contact: Omit<EmergencyContact, 'id'>) => void;
-  removeEmergencyContact: (id: string) => void;
-  regenerateFamilyId: () => void;
-  addContact: (contact: Omit<ContactItem, 'id' | 'isAppUser'>) => void;
+  role: 'elder' | 'user'; // Kept for UI logic compat, but essentially unused
+  addContact: (contact: Omit<ContactItem, 'id'>) => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -106,7 +100,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [isLoading, setIsLoading] = useState(true);
   const [isOnboarding, setIsOnboarding] = useState(false);
   const [incomingCall, setIncomingCall] = useState<CallLogItem | null>(null);
-  const [incomingSOS, setIncomingSOS] = useState(false);
   const [isOnline, setIsOnline] = useState(navigator.onLine);
 
   useEffect(() => {
@@ -187,10 +180,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const userActions = useUserProfile({ user, persistUser });
   
-  const regenerateFamilyIdWrapper = () => {
-    userActions.regenerateFamilyId(() => Math.floor(100000 + Math.random() * 900000).toString());
-  };
-
   const login = async (phone: string) => {
     return new Promise<void>((resolve) => {
       setTimeout(() => {
@@ -208,12 +197,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             id: Date.now().toString(),
             name: "Người dùng", 
             phone: phone,
-            contacts: MOCK_PHONE_CONTACTS.map(c => ({ id: c.phone, name: c.name, phone: c.phone, isAppUser: false })),
+            contacts: MOCK_PHONE_CONTACTS.map(c => ({ id: c.phone, name: c.name, phone: c.phone })),
             alertHistory: [],
             messageHistory: [],
             callHistory: [],
             contactsPermission: true,
-            emergencyContacts: [],
+            securityQuestions: [],
             riskThreshold: 70,
             autoHangupHighRisk: false,
             isSeniorMode: false,
@@ -251,7 +240,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const checkLimit = (feature: 'deepfake' | 'message' | 'lookup'): boolean => {
       if (!user) return false;
-      if (user.plan === 'premium' || user.plan === 'family') return true; // Unlimited for Premium/Family
+      // Monthly and Yearly are both premium plans with unlimited usage
+      if (user.plan === 'monthly' || user.plan === 'yearly') return true; 
 
       const usage = user.usage;
       if (feature === 'deepfake') return usage.deepfakeScans < LIMITS.FREE.DEEPFAKE_SCANS;
@@ -262,7 +252,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const incrementUsage = (feature: 'deepfake' | 'message' | 'lookup') => {
-      if (!user || user.plan === 'premium' || user.plan === 'family') return;
+      if (!user || user.plan === 'monthly' || user.plan === 'yearly') return;
 
       const newUsage = { ...user.usage };
       if (feature === 'deepfake') newUsage.deepfakeScans += 1;
@@ -311,7 +301,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       });
   };
 
-  const upgradeSubscription = (plan: SubscriptionPlan = 'premium') => {
+  const upgradeSubscription = (plan: SubscriptionPlan) => {
       if (user) {
           const updated = { ...user, plan };
           persistUser(updated);
@@ -346,10 +336,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       checkLimit,
       incrementUsage,
       role,
-      incomingSOS,
-      setIncomingSOS,
       ...userActions,
-      regenerateFamilyId: regenerateFamilyIdWrapper,
     }}>
       {children}
     </AuthContext.Provider>

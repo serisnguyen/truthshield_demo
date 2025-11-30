@@ -6,15 +6,13 @@ import {
   Plus, Search, UserPlus, X, Camera
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
-import VoiceSetupModal from './VoiceSetupModal';
 
 type PhoneTab = 'keypad' | 'recents' | 'contacts';
 
 const PhoneApp: React.FC = () => {
-  const { user, isSeniorMode, setIncomingCall, syncContacts, addContact } = useAuth();
+  const { user, isSeniorMode, setIncomingCall, addContact } = useAuth();
   const [activeTab, setActiveTab] = useState<PhoneTab>('recents');
   const [dialNumber, setDialNumber] = useState('');
-  const [showVoiceModal, setShowVoiceModal] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
 
   // Add Contact State
@@ -219,7 +217,6 @@ const PhoneApp: React.FC = () => {
                 <div className="flex items-center justify-between mb-2">
                      <h3 className="font-black text-2xl text-slate-900 px-2">Danh bạ</h3>
                      <div className="flex gap-2">
-                         <button onClick={() => syncContacts()} className="p-2 bg-white rounded-full shadow-sm text-blue-600"><Users size={20}/></button>
                          <button onClick={() => openAddContactModal()} className="p-2 bg-blue-600 rounded-full shadow-sm text-white"><Plus size={20}/></button>
                      </div>
                 </div>
@@ -262,13 +259,6 @@ const PhoneApp: React.FC = () => {
                                 <p className="text-slate-400 text-xs">{contact.phone}</p>
                             </div>
                         </div>
-                        {contact.hasVoiceProfile ? (
-                            <ShieldCheck size={20} className="text-green-500" />
-                        ) : (
-                            <span className="text-[10px] font-bold text-blue-600 bg-blue-50 px-2 py-1 rounded">
-                                Liên hệ
-                            </span>
-                        )}
                     </div>
                 ))
                 ) : (
@@ -278,7 +268,6 @@ const PhoneApp: React.FC = () => {
                     </div>
                 )}
             </div>
-            {showVoiceModal && <VoiceSetupModal onClose={() => setShowVoiceModal(false)} initialTab="family" />}
         </div>
       );
   };

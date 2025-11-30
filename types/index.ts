@@ -3,19 +3,12 @@ export interface ContactItem {
   id: string;
   name: string;
   phone: string;
-  isAppUser: boolean; // True if they are in global DB
-}
-
-export interface EmergencyContact {
-  id: string;
-  name: string;
-  phone: string;
 }
 
 export interface AlertHistoryItem {
   id: string;
   timestamp: number;
-  type: 'deepfake' | 'scam_msg' | 'sos' | 'community_block';
+  type: 'deepfake' | 'scam_msg' | 'community_block';
   riskScore: number;
   details: string;
 }
@@ -59,7 +52,7 @@ export interface CallLogItem {
   };
 }
 
-export type SubscriptionPlan = 'free' | 'premium' | 'family';
+export type SubscriptionPlan = 'free' | 'monthly' | 'yearly';
 
 export interface UserUsage {
     deepfakeScans: number;
@@ -77,17 +70,13 @@ export interface User {
   alertHistory: AlertHistoryItem[];
   callHistory: CallLogItem[];
   messageHistory: MessageAnalysisLog[];
-  emergencyContacts: EmergencyContact[];
   securityQuestions?: string[];
-  sosMessage?: string;
-  familyId?: string;
-  familyCodeTimestamp?: number;
   
   // Subscription
   plan: SubscriptionPlan;
   validUntil?: number;
   
-  // Usage Tracking (New)
+  // Usage Tracking
   usage: UserUsage;
 
   // Settings
