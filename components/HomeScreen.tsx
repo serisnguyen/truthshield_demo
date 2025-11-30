@@ -51,36 +51,16 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigate }) => {
   };
 
   return (
-    <div className={`p-4 md:p-6 lg:p-8 pt-4 pb-32 max-w-7xl mx-auto animate-in fade-in duration-500 space-y-6`}>
+    <div className={`p-5 md:p-6 lg:p-8 pt-6 pb-32 max-w-7xl mx-auto animate-in fade-in duration-500 space-y-6`}>
        
-       {/* Live Threat Ticker - Hidden on very small screens, visible on Tablet/Desktop */}
-       <div className="hidden sm:flex bg-slate-900/5 backdrop-blur-sm rounded-full py-1.5 px-4 items-center gap-3 overflow-hidden border border-slate-900/5">
-           <div className="flex items-center gap-1.5 whitespace-nowrap">
-               <span className="relative flex h-2 w-2">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
-                  <span className="relative inline-flex rounded-full h-2 w-2 bg-red-500"></span>
-                </span>
-               <span className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Live Threats:</span>
-           </div>
-           <div className="flex-1 overflow-hidden">
-               <div className="animate-[marquee_20s_linear_infinite] whitespace-nowrap text-xs font-medium text-slate-600 flex gap-8">
-                   <span>⚠️ Đã chặn: 090...123 (Giả danh Công An)</span>
-                   <span>🛡️ Bảo vệ: Chặn mã độc từ SMS rác</span>
-                   <span>⚠️ Đã chặn: 088...999 (Spam BĐS)</span>
-                   <span>🛡️ Bảo vệ: Deepfake FaceSwap phát hiện</span>
-                   <span>⚠️ Đã chặn: 091...555 (Lừa đảo thẻ tín dụng)</span>
-               </div>
-           </div>
-       </div>
-
        {/* Greeting Section */}
-       <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 px-1 mt-2 md:mt-0">
+       <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 px-2 mt-2 md:mt-0">
            <div>
                <div className="flex items-center gap-2 mb-1">
-                    <h1 className={`${isSeniorMode ? 'text-2xl' : 'text-2xl md:text-3xl'} font-black text-slate-900 tracking-tight`}>
+                    <h1 className={`${isSeniorMode ? 'text-2xl' : 'text-3xl md:text-3xl'} font-black text-slate-900 tracking-tight`}>
                         Chào <span className="text-blue-600">{user?.name}</span>
                     </h1>
-                    <span className="text-xl md:text-2xl animate-wave origin-bottom">👋</span>
+                    <span className="text-2xl md:text-2xl animate-wave origin-bottom">👋</span>
                </div>
                <div className={`${isSeniorMode ? 'text-base' : 'text-sm md:text-base'} text-slate-500 font-bold flex items-center gap-2`}>
                    <div className="bg-green-100 p-1 rounded-full">
@@ -100,58 +80,45 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigate }) => {
            )}
        </div>
 
-       {/* HERO DASHBOARD - Responsive Grid: Mobile 1 col, Tablet 2 cols, Desktop 3 cols */}
-       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
+       {/* HERO DASHBOARD */}
+       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
            
            {/* MAIN PROTECTION CARD - "The Core" */}
-           <div className="md:col-span-2 bg-slate-900 rounded-[32px] md:rounded-[40px] text-white shadow-2xl shadow-blue-900/20 relative overflow-hidden flex flex-col justify-between min-h-[300px] md:min-h-[340px] border border-slate-800 group">
+           <div className="md:col-span-2 bg-slate-900 rounded-[2.5rem] md:rounded-[3rem] text-white shadow-2xl shadow-blue-900/20 relative overflow-hidden flex flex-col justify-between min-h-[340px] md:min-h-[360px] border border-slate-800 group">
                
                {/* Animated Background */}
                <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-blue-900/40 via-slate-900 to-slate-900"></div>
                <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 brightness-100 contrast-150 mix-blend-overlay"></div>
                
                {/* Main Content Area */}
-               <div className="relative z-10 p-6 md:p-8 flex flex-col md:flex-row items-center md:items-start gap-6 md:gap-10 h-full">
+               <div className="relative z-10 p-8 md:p-10 flex flex-col md:flex-row items-center md:items-start gap-8 md:gap-10 h-full">
                    
-                   {/* Shield Reactor - Scaled down for mobile */}
-                   <div className="relative w-28 h-28 md:w-48 md:h-48 flex-shrink-0 mt-2 md:mt-4 cursor-pointer" onClick={handleSystemCheck}>
+                   {/* Shield Reactor */}
+                   <div className="relative w-36 h-36 md:w-48 md:h-48 flex-shrink-0 mt-4 cursor-pointer" onClick={handleSystemCheck}>
                        {/* Spinning Outer Ring */}
                        <div className={`absolute inset-0 rounded-full border border-blue-500/30 border-t-blue-400 border-r-blue-400 transition-all duration-1000 ${systemStatus === 'optimizing' ? 'animate-[spin_0.5s_linear_infinite]' : 'animate-[spin_10s_linear_infinite]'}`}></div>
                        
                        {/* Inner Pulsing Core */}
                        <div className="absolute inset-4 bg-blue-500/10 rounded-full animate-ping [animation-duration:3s]"></div>
                        
-                       {/* Radar Sweep */}
-                       <div className="absolute inset-2 rounded-full border border-blue-500/10 overflow-hidden">
-                            <div className="absolute top-1/2 left-1/2 w-[50%] h-[50%] bg-gradient-to-br from-blue-400/40 to-transparent origin-top-left animate-[spin_4s_linear_infinite] rounded-tl-full"></div>
-                       </div>
-                       
                        {/* Center Shield */}
                        <div className="absolute inset-0 flex items-center justify-center">
-                           <div className={`bg-slate-900 p-4 md:p-5 rounded-full border border-blue-500/50 shadow-[0_0_30px_rgba(59,130,246,0.5)] relative z-10 transition-all ${systemStatus === 'optimizing' ? 'scale-90 shadow-[0_0_50px_rgba(59,130,246,0.8)]' : 'hover:scale-105'}`}>
-                               <Shield size={isSeniorMode ? 40 : 32} className="text-blue-400 fill-blue-500/20 md:w-10 md:h-10" />
+                           <div className={`bg-slate-900 p-6 md:p-6 rounded-full border border-blue-500/50 shadow-[0_0_30px_rgba(59,130,246,0.5)] relative z-10 transition-all ${systemStatus === 'optimizing' ? 'scale-90 shadow-[0_0_50px_rgba(59,130,246,0.8)]' : 'hover:scale-105'}`}>
+                               <Shield size={isSeniorMode ? 44 : 40} className="text-blue-400 fill-blue-500/20 md:w-12 md:h-12" />
                            </div>
-                       </div>
-
-                       {/* Status Particles */}
-                       <div className="absolute -top-2 right-0">
-                           <span className="relative flex h-3 w-3 md:h-4 md:w-4">
-                              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
-                              <span className="relative inline-flex rounded-full h-3 w-3 md:h-4 md:w-4 bg-green-500 border-2 border-slate-900"></span>
-                            </span>
                        </div>
                    </div>
 
                    {/* Text Content */}
-                   <div className="flex-1 text-center md:text-left flex flex-col justify-center h-full pt-2 md:pt-4">
-                       <div className="inline-flex items-center justify-center md:justify-start gap-2 mb-2 md:mb-3">
-                           <div className="bg-blue-500/20 p-1 rounded-md backdrop-blur-sm border border-blue-500/30">
-                               <Activity size={12} className="text-blue-300" />
+                   <div className="flex-1 text-center md:text-left flex flex-col justify-center h-full pt-2 md:pt-6">
+                       <div className="inline-flex items-center justify-center md:justify-start gap-2 mb-3">
+                           <div className="bg-blue-500/20 p-1.5 rounded-lg backdrop-blur-sm border border-blue-500/30">
+                               <Activity size={14} className="text-blue-300" />
                            </div>
                            <span className="text-[10px] md:text-xs font-bold text-blue-200 uppercase tracking-widest glow-text">AI Sentinel Core</span>
                        </div>
                        
-                       <h2 className="text-3xl md:text-5xl lg:text-6xl font-black text-white leading-tight mb-2 md:mb-3 tracking-tight">
+                       <h2 className="text-4xl md:text-5xl lg:text-6xl font-black text-white leading-tight mb-3 tracking-tight">
                            {systemStatus === 'optimizing' ? (
                                <span className="text-blue-300 animate-pulse">ĐANG QUÉT...</span>
                            ) : (
@@ -171,47 +138,44 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigate }) => {
                </div>
 
                {/* Bottom Stats Bar */}
-               <div className="relative z-10 bg-black/40 backdrop-blur-md border-t border-white/5 p-3 md:p-5 grid grid-cols-3 gap-px">
+               <div className="relative z-10 bg-black/40 backdrop-blur-md border-t border-white/5 p-5 grid grid-cols-3 gap-px">
                    <div className="flex flex-col items-center justify-center border-r border-white/5">
                        <div className="flex items-center gap-1 md:gap-2 text-white font-bold text-sm md:text-lg">
-                           <Clock size={14} className="text-emerald-400" /> 24/7
+                           <Clock size={16} className="text-emerald-400" /> 24/7
                        </div>
-                       <span className="text-[9px] md:text-[10px] text-slate-500 font-bold uppercase tracking-wider mt-1">Hoạt động</span>
                    </div>
                    
                    <div className="flex flex-col items-center justify-center border-r border-white/5">
                        <div className="flex items-center gap-1 md:gap-2 text-white font-bold text-sm md:text-lg">
-                           <Globe size={14} className="text-blue-400" /> Global
+                           <Globe size={16} className="text-blue-400" /> Global
                        </div>
-                       <span className="text-[9px] md:text-[10px] text-slate-500 font-bold uppercase tracking-wider mt-1">Database</span>
                    </div>
                    
                    <div className="flex flex-col items-center justify-center">
                        <div className="flex items-center gap-1 md:gap-2 text-white font-bold text-sm md:text-lg">
-                           <Battery size={14} className="text-yellow-400" /> Tối ưu
+                           <Battery size={16} className="text-yellow-400" /> Tối ưu
                        </div>
-                       <span className="text-[9px] md:text-[10px] text-slate-500 font-bold uppercase tracking-wider mt-1">Hiệu năng</span>
                    </div>
                </div>
            </div>
 
            {/* STATS / ACTION COLUMN */}
-           <div className="grid grid-cols-1 gap-4 md:gap-6">
+           <div className="grid grid-cols-1 gap-5">
                {/* Scan Stat - Full Height */}
-               <div onClick={() => onNavigate('scanner')} className="bg-white p-5 md:p-6 rounded-[32px] cursor-pointer shadow-lg shadow-purple-200/50 border border-white relative overflow-hidden group hover:-translate-y-1 transition-transform duration-300 flex flex-col justify-between h-full min-h-[180px]">
+               <div onClick={() => onNavigate('scanner')} className="bg-white p-7 rounded-[2.5rem] cursor-pointer shadow-lg shadow-purple-200/50 border border-white relative overflow-hidden group hover:-translate-y-1 transition-transform duration-300 flex flex-col justify-between h-full min-h-[220px]">
                    <div className="absolute -right-4 -top-4 w-32 h-32 bg-purple-500/10 rounded-full blur-2xl group-hover:bg-purple-500/20 transition-colors"></div>
                    
                    <div className="flex justify-between items-start mb-4 relative z-10">
-                       <div className="w-12 h-12 md:w-14 md:h-14 rounded-2xl bg-purple-50 flex items-center justify-center text-purple-600 shadow-sm border border-purple-100">
-                           <Scan size={24} className="md:w-7 md:h-7" />
+                       <div className="w-16 h-16 rounded-3xl bg-purple-50 flex items-center justify-center text-purple-600 shadow-sm border border-purple-100">
+                           <Scan size={32} className="md:w-8 md:h-8" />
                        </div>
-                       <ArrowUpRight size={20} className="text-slate-300 group-hover:text-purple-600 transition-colors md:w-6 md:h-6" />
+                       <ArrowUpRight size={28} className="text-slate-300 group-hover:text-purple-600 transition-colors" />
                    </div>
                    <div className="relative z-10">
-                       <h3 className="text-2xl md:text-3xl font-black text-slate-900 tracking-tight">AI Scan</h3>
-                       <p className="text-xs md:text-sm font-bold text-slate-500 mt-1 md:mt-2">Quét Deepfake khuôn mặt & giọng nói.</p>
-                       <div className="mt-3 md:mt-4 flex items-center gap-2 text-[10px] md:text-xs font-bold text-purple-600 uppercase tracking-wide">
-                           <span className="w-1.5 h-1.5 md:w-2 md:h-2 rounded-full bg-purple-600 animate-pulse"></span> Sẵn sàng
+                       <h3 className="text-3xl font-black text-slate-900 tracking-tight">AI Scan</h3>
+                       <p className="text-sm font-bold text-slate-500 mt-2">Quét Deepfake khuôn mặt & giọng nói.</p>
+                       <div className="mt-4 flex items-center gap-2 text-xs font-bold text-purple-600 uppercase tracking-wide">
+                           <span className="w-2 h-2 rounded-full bg-purple-600 animate-pulse"></span> Sẵn sàng
                        </div>
                    </div>
                </div>
@@ -221,54 +185,54 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigate }) => {
        {/* QUICK ACTION: LOOKUP (Search Bar Style) */}
        <div 
          onClick={() => onNavigate('lookup')}
-         className="bg-white rounded-[24px] md:rounded-[28px] p-2 flex items-center shadow-lg shadow-blue-100 border border-slate-100 cursor-pointer group hover:shadow-xl transition-all"
+         className="bg-white rounded-[2.5rem] p-4 flex items-center shadow-lg shadow-blue-100 border border-slate-100 cursor-pointer group hover:shadow-xl transition-all"
        >
-           <div className="w-12 h-12 md:w-14 md:h-14 bg-blue-600 rounded-[18px] md:rounded-[22px] flex items-center justify-center text-white shadow-lg shadow-blue-200 group-hover:scale-105 transition-transform">
-               <Search size={20} className="md:w-6 md:h-6" />
+           <div className="w-16 h-16 bg-blue-600 rounded-[2rem] flex items-center justify-center text-white shadow-lg shadow-blue-200 group-hover:scale-105 transition-transform">
+               <Search size={28} />
            </div>
-           <div className="flex-1 px-3 md:px-4">
-               <h3 className="font-bold text-slate-900 text-base md:text-lg">Tra cứu số lạ</h3>
-               <p className="text-slate-400 text-xs md:text-sm font-medium">Nhập số điện thoại để kiểm tra...</p>
+           <div className="flex-1 px-5">
+               <h3 className="font-bold text-slate-900 text-xl">Tra cứu số lạ</h3>
+               <p className="text-slate-400 text-base font-medium">Nhập số điện thoại để kiểm tra...</p>
            </div>
-           <div className="pr-2 md:pr-4">
-               <div className="w-8 h-8 md:w-10 md:h-10 rounded-full bg-slate-50 flex items-center justify-center text-slate-400 group-hover:bg-blue-50 group-hover:text-blue-600 transition-colors">
-                   <ChevronRight size={16} className="md:w-5 md:h-5" />
+           <div className="pr-4">
+               <div className="w-12 h-12 rounded-full bg-slate-50 flex items-center justify-center text-slate-400 group-hover:bg-blue-50 group-hover:text-blue-600 transition-colors">
+                   <ChevronRight size={24} />
                </div>
            </div>
        </div>
 
        {/* DEMO ACTIONS ROW */}
        <div>
-           <h2 className="text-sm font-bold text-slate-400 uppercase tracking-wider mb-3 px-2 flex items-center gap-2">
+           <h2 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-4 px-3 flex items-center gap-2">
                <Zap size={14} /> Giả lập tình huống
            </h2>
-           <div className="grid grid-cols-2 gap-3 md:gap-4">
+           <div className="grid grid-cols-2 gap-4">
                 <button 
                     onClick={triggerShipperCall}
-                    className="bg-white hover:bg-green-50 p-4 md:p-5 rounded-[20px] md:rounded-[24px] text-left transition-all border border-slate-100 hover:border-green-200 shadow-sm group relative overflow-hidden"
+                    className="bg-white hover:bg-green-50 p-6 rounded-[2.5rem] text-left transition-all border border-slate-100 hover:border-green-200 shadow-sm group relative overflow-hidden"
                 >
-                    <div className="absolute right-0 bottom-0 opacity-5 -rotate-12 transform translate-x-2 translate-y-2">
-                        <Truck size={60} className="text-green-600" />
+                    <div className="absolute right-0 bottom-0 opacity-5 -rotate-12 transform translate-x-4 translate-y-4">
+                        <Truck size={80} className="text-green-600" />
                     </div>
-                    <div className="w-8 h-8 md:w-10 md:h-10 bg-green-100 rounded-xl flex items-center justify-center text-green-600 mb-2 md:mb-3 group-hover:scale-110 transition-transform relative z-10">
-                        <Truck size={16} className="md:w-5 md:h-5" />
+                    <div className="w-12 h-12 bg-green-100 rounded-2xl flex items-center justify-center text-green-600 mb-4 group-hover:scale-110 transition-transform relative z-10">
+                        <Truck size={24} />
                     </div>
-                    <span className="block font-bold text-slate-900 relative z-10 text-sm md:text-base">Shipper Gọi</span>
-                    <span className="text-[10px] md:text-xs text-slate-500 font-medium relative z-10">Kịch bản an toàn</span>
+                    <span className="block font-bold text-slate-900 relative z-10 text-lg">Shipper Gọi</span>
+                    <span className="text-xs text-slate-500 font-medium relative z-10 mt-1 block">Kịch bản an toàn</span>
                 </button>
 
                 <button 
                     onClick={triggerScamCall}
-                    className="bg-white hover:bg-red-50 p-4 md:p-5 rounded-[20px] md:rounded-[24px] text-left transition-all border border-slate-100 hover:border-red-200 shadow-sm group relative overflow-hidden"
+                    className="bg-white hover:bg-red-50 p-6 rounded-[2.5rem] text-left transition-all border border-slate-100 hover:border-red-200 shadow-sm group relative overflow-hidden"
                 >
-                     <div className="absolute right-0 bottom-0 opacity-5 -rotate-12 transform translate-x-2 translate-y-2">
-                        <AlertTriangle size={60} className="text-red-600" />
+                     <div className="absolute right-0 bottom-0 opacity-5 -rotate-12 transform translate-x-4 translate-y-4">
+                        <AlertTriangle size={80} className="text-red-600" />
                     </div>
-                    <div className="w-8 h-8 md:w-10 md:h-10 bg-red-100 rounded-xl flex items-center justify-center text-red-600 mb-2 md:mb-3 group-hover:scale-110 transition-transform relative z-10">
-                        <AlertTriangle size={16} className="md:w-5 md:h-5" />
+                    <div className="w-12 h-12 bg-red-100 rounded-2xl flex items-center justify-center text-red-600 mb-4 group-hover:scale-110 transition-transform relative z-10">
+                        <AlertTriangle size={24} />
                     </div>
-                    <span className="block font-bold text-slate-900 relative z-10 text-sm md:text-base">Lừa Đảo Gọi</span>
-                    <span className="text-[10px] md:text-xs text-slate-500 font-medium relative z-10">Kịch bản nguy hiểm</span>
+                    <span className="block font-bold text-slate-900 relative z-10 text-lg">Lừa Đảo Gọi</span>
+                    <span className="text-xs text-slate-500 font-medium relative z-10 mt-1 block">Kịch bản nguy hiểm</span>
                 </button>
            </div>
        </div>
@@ -276,23 +240,23 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigate }) => {
        {/* News Widget */}
        <div 
          onClick={() => onNavigate('library')}
-         className="bg-gradient-to-br from-slate-800 to-slate-900 rounded-[28px] md:rounded-[32px] p-5 md:p-6 text-white relative overflow-hidden cursor-pointer group"
+         className="bg-gradient-to-br from-slate-800 to-slate-900 rounded-[2.5rem] p-8 text-white relative overflow-hidden cursor-pointer group mb-10"
        >
-           <div className="absolute top-0 right-0 w-32 h-32 md:w-40 md:h-40 bg-blue-500/20 rounded-full blur-3xl translate-x-10 -translate-y-10 group-hover:bg-blue-500/30 transition-colors"></div>
+           <div className="absolute top-0 right-0 w-48 h-48 bg-blue-500/20 rounded-full blur-3xl translate-x-10 -translate-y-10 group-hover:bg-blue-500/30 transition-colors"></div>
            
-           <div className="relative z-10 flex items-center gap-4">
-               <div className="w-10 h-10 md:w-12 md:h-12 bg-white/10 rounded-2xl flex items-center justify-center backdrop-blur-sm border border-white/10">
-                   <BellRing size={18} className="text-yellow-400 md:w-5 md:h-5" />
+           <div className="relative z-10 flex items-center gap-6">
+               <div className="w-14 h-14 bg-white/10 rounded-2xl flex items-center justify-center backdrop-blur-sm border border-white/10 flex-shrink-0">
+                   <BellRing size={24} className="text-yellow-400" />
                </div>
                <div className="flex-1 min-w-0">
-                   <div className="flex items-center gap-2 mb-0.5 md:mb-1">
-                       <span className="bg-red-500 text-white text-[9px] md:text-[10px] font-bold px-1.5 py-0.5 rounded-full animate-pulse shadow-lg shadow-red-500/40">HOT</span>
-                       <h3 className="font-bold text-sm md:text-base truncate">Thủ đoạn mới: SIM 5G</h3>
+                   <div className="flex items-center gap-2 mb-1.5">
+                       <span className="bg-red-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full animate-pulse shadow-lg shadow-red-500/40">HOT</span>
+                       <h3 className="font-bold text-lg truncate">Thủ đoạn mới: SIM 5G</h3>
                    </div>
-                   <p className="text-slate-400 text-xs md:text-sm line-clamp-1">Cảnh báo chiêu trò nâng cấp SIM để chiếm đoạt OTP.</p>
+                   <p className="text-slate-400 text-sm line-clamp-2">Cảnh báo chiêu trò nâng cấp SIM để chiếm đoạt OTP ngân hàng.</p>
                </div>
-               <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center group-hover:bg-white group-hover:text-slate-900 transition-colors">
-                   <ChevronRight size={16} />
+               <div className="w-12 h-12 rounded-full bg-white/10 flex items-center justify-center group-hover:bg-white group-hover:text-slate-900 transition-colors">
+                   <ChevronRight size={24} />
                </div>
            </div>
        </div>
