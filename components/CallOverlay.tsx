@@ -52,6 +52,14 @@ const CallOverlay: React.FC<CallOverlayProps> = ({ call }) => {
         audioRef.current = new Audio('https://actions.google.com/sounds/v1/alarms/spaceship_alarm.ogg');
         audioRef.current.loop = false;
         audioRef.current.volume = 0.5;
+
+        return () => {
+            // Cleanup: Stop audio when component unmounts
+            if (audioRef.current) {
+                audioRef.current.pause();
+                audioRef.current.currentTime = 0;
+            }
+        };
     }, []);
 
     // Timer logic
@@ -63,6 +71,14 @@ const CallOverlay: React.FC<CallOverlayProps> = ({ call }) => {
             }, 1000);
         }
         return () => clearInterval(interval);
+    }, [status]);
+
+    // Stop audio when status changes (answered/rejected/blocked)
+    useEffect(() => {
+        if (status !== 'ringing' && audioRef.current) {
+            audioRef.current.pause();
+            audioRef.current.currentTime = 0;
+        }
     }, [status]);
 
 
